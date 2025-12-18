@@ -8,7 +8,7 @@
 
 #### step # 2:
 
-- `install : npm i express dotenv mongoose --save`
+- install : `npm i express dotenv mongoose --save`
 - --save is used for save the package in package.json file.
 
 #### step # 3:
@@ -52,7 +52,7 @@ console.log(`Server is running on port ${process.env.PORT}`);
 
 #### step # 5:
 
-- `npm i nodemon --save-dev`
+`- npm i nodemon --save-dev`
 - This will install devdependences of nodemon
 - remove test and add this `"start": "node backend/app.js"` in package.json file.
 - then try this in terminal `npm start`
