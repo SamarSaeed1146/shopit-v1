@@ -1,0 +1,24 @@
+{
+  "name": "shopit-v1",
+  "version": "1.0.0",
+  "description": "Ecommerce website",
+  "license": "ISC",
+  "author": "Samar Saeed",
+  "type": "module",
+  "main": "app.js",
+  "scripts": {
+    "start": "node backend/app.js",
+    "dev": "SET NODE_ENV=DEVELOPMENT& nodemon backend/app.js",
+    "prod": "SET NODE_ENV=PRODUCTION& nodemon backend/app.js"
+    
+    
+  },
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "mongoose": "^9.0.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.11"
+  }
+}
