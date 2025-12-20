@@ -132,3 +132,52 @@ app.listen(process.env.PORT, () => {
 });
 
 ```
+
+## Database Connection MongoDB
+
+- In config folder make a new file : `dbconnect.js`.
+- Add this in `dbconnect.js` :
+
+```
+import mongoose from "mongoose";
+
+export const connectDatabase = async () => {
+  let DB_URI = "";
+
+  if (process.env.NODE_ENV === "DEVELOPMENT") DB_URI = process.env.DB_LOCAL_URI;
+  if (process.env.NODE_ENV === "PRODUCTION") DB_URI = process.env.DB_URI;
+
+  mongoose.connect(DB_URI).then((con) => {
+    console.log(
+      `MongoDB Database connected with HOST: ${con?.connection?.host}`
+    );
+  });
+};
+
+```
+
+- In `config.env file` add this: `DB_LOCAL_URI=mongodb://127.0.0.1:27017/shopit` `DB_URI=`
+- In app.js file add: `import { connectDatabase } from "./config/dbConnect.js";` & `connectDatabase();`
+
+```
+import express from "express";
+
+const app = express();
+import dotenv from "dotenv";
+import { connectDatabase } from "./config/dbConnect.js";
+
+dotenv.config({ path: "backend/config/config.env" });
+
+connectDatabase();
+
+import productRoutes from "./routes/products.js";
+
+app.use("/api/v1", productRoutes);
+
+app.listen(process.env.PORT, () => {
+  console.log(
+    `Server is running on port ${process.env.PORT} in ${process.env.NODE_ENV} mode.`
+  );
+});
+
+```
