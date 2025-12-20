@@ -83,3 +83,33 @@ app.listen(process.env.PORT, () => {
 ```
 
 - Add this to config.env file `NODE_ENV=DEVELOPMENT`
+
+#### step # 6:
+
+- Make a folder of `controllers` in backend folder.
+- In controllers folder make `productControllers.js` file.
+- In productControllers.js file add this code:
+
+```
+export const getProducts = async (req, res) => {
+  res.status(200).json({ message: "All products" });
+};
+
+```
+
+#### step # 7:
+
+- Make a folder of `routes` in backend folder.
+- In routes folder make `products.js` file.
+- In products.js file add this code:
+
+```
+import express from "express";
+import { getProducts } from "../controllers/productControllers.js";
+const router = express.Router();
+
+router.route("/products").get(getProducts);
+
+export default router;
+
+```
