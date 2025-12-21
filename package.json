@@ -9,9 +9,8 @@
   "scripts": {
     "start": "node backend/app.js",
     "dev": "SET NODE_ENV=DEVELOPMENT& nodemon backend/app.js",
-    "prod": "SET NODE_ENV=PRODUCTION& nodemon backend/app.js"
-    
-    
+    "prod": "SET NODE_ENV=PRODUCTION& nodemon backend/app.js",
+    "seeder": "node backend/seeder/seeder.js"
   },
   "dependencies": {
     "dotenv": "^17.2.3",
