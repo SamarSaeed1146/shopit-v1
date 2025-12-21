@@ -181,3 +181,168 @@ app.listen(process.env.PORT, () => {
 });
 
 ```
+
+## Product Schema
+
+- In backend folder make a new folder : `models`
+- In `models` folder make a new file : `product.js` & add this :
+
+```
+import mongoose from "mongoose";
+
+const productSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: [true, "Please enter product name"],
+      maxLength: [200, "Product name cannot exceed 200 characters"],
+    },
+    price: {
+      type: Number,
+      required: [true, "Please enter product price"],
+      maxLength: [5, "Product price cannot exceed 5 digits"],
+    },
+    description: {
+      type: String,
+      required: [true, "Please enter product description"],
+    },
+    ratings: {
+      type: Number,
+      default: 0,
+    },
+    images: [
+      {
+        public_id: {
+          type: String,
+          required: true,
+        },
+        url: {
+          type: String,
+          required: true,
+        },
+      },
+    ],
+    category: {
+      type: String,
+      required: [true, "Please enter product category"],
+      enum: {
+        values: [
+          "Electronics",
+          "Cameras",
+          "Laptops",
+          "Accessories",
+          "Headphones",
+          "Food",
+          "Books",
+          "Sports",
+          "Outdoor",
+          "Home",
+        ],
+        message: "Please select correct category for product",
+      },
+    },
+    seller: {
+      type: String,
+      required: [true, "Please enter product seller"],
+    },
+    stock: {
+      type: Number,
+      required: [true, "Please enter product stock"],
+    },
+    numOfReviews: {
+      type: Number,
+      default: 0,
+    },
+    reviews: [
+      {
+        user: {
+          type: mongoose.Schema.ObjectId,
+          ref: "User",
+          required: true,
+        },
+        rating: {
+          type: Number,
+          required: true,
+        },
+        comment: {
+          type: String,
+          required: true,
+        },
+      },
+    ],
+    user: {
+      type: mongoose.Schema.ObjectId,
+      ref: "User",
+      required: false,
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
+
+export default mongoose.model("Product", productSchema);
+
+```
+
+- Then Go to `productControllers.js` file add this:
+
+```
+import Product from "../models/product.js";
+
+// create new product => /api/v1/products
+
+export const getProducts = async (req, res) => {
+  res.status(200).json({ message: "All products" });
+};
+
+// Create new product => /api/v1/admin/products
+export const newProducts = async (req, res) => {
+  const product = await Product.create(req.body);
+  res.status(200).json({
+    product,
+  });
+};
+
+```
+
+- Then go to `product.js` file & Add this :
+
+```
+import express from "express";
+import { getProducts } from "../controllers/productControllers.js";
+const router = express.Router();
+
+router.route("/products").get(getProducts);
+router.route("/admin/products").post(getProducts);
+
+export default router;
+
+```
+
+- Update app.js file with this :
+
+```
+import express from "express";
+
+const app = express();
+import dotenv from "dotenv";
+import { connectDatabase } from "./config/dbConnect.js";
+
+dotenv.config({ path: "backend/config/config.env" });
+
+connectDatabase();
+
+app.use(express.json());
+
+import productRoutes from "./routes/products.js";
+
+app.use("/api/v1", productRoutes);
+
+app.listen(process.env.PORT, () => {
+  console.log(
+    `Server is running on port ${process.env.PORT} in ${process.env.NODE_ENV} mode.`
+  );
+});
+
+```
