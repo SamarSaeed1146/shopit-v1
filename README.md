@@ -184,6 +184,8 @@ app.listen(process.env.PORT, () => {
 
 ## Product Schema
 
+#### step # 1:
+
 - In backend folder make a new folder : `models`
 - In `models` folder make a new file : `product.js` & add this :
 
@@ -346,3 +348,117 @@ app.listen(process.env.PORT, () => {
 });
 
 ```
+
+#### step # 2:
+
+- Make a new folder in `backend`
+- `seeder` in `seeder` folder make two files : `data.js` & `seeder.js`
+- In `data.js` file add this:
+
+```
+export default [
+  {
+    name: "Sample Product 1",
+    description: "This is a sample product",
+    price: 29.99,
+    images: [
+      {
+        public_id: "sample_image_1",
+        url: "http://example.com/sample_image_1.jpg",
+      },
+    ],
+    category: "Electronics",
+    stock: 100,
+    reviews: [
+      {
+        user: "user_id_1",
+        name: "John Doe",
+        rating: 4,
+        comment: "Great product!",
+      },
+      {
+        user: "user_id_2",
+        name: "Jane Smith",
+        rating: 5,
+        comment: "Excellent quality!",
+      },
+    ],
+    numReviews: 2,
+    ratings: 4.5,
+    images: [
+      [
+        {
+          public_id: "sample_image_1",
+          url: "http://example.com/sample_image_1.jpg",
+        },
+        {
+          public_id: "sample_image_2",
+          url: "http://example.com/sample_image_2.jpg",
+        },
+      ],
+      [
+        {
+          public_id: "sample_image_3",
+          url: "http://example.com/sample_image_3.jpg",
+        },
+        {
+          public_id: "sample_image_4",
+          url: "http://example.com/sample_image_4.jpg",
+        },
+      ],
+    ],
+    images: [
+      [
+        {
+          public_id: "sample_image_1",
+          url: "http://example.com/sample_image_1.jpg",
+        },
+        {
+          public_id: "sample_image_2",
+          url: "http://example.com/sample_image_2.jpg",
+        },
+      ],
+      [
+        {
+          public_id: "sample_image_3",
+          url: "http://example.com/sample_image_3.jpg",
+        },
+        {
+          public_id: "sample_image_4",
+          url: "http://example.com/sample_image_4.jpg",
+        },
+      ],
+    ],
+  },
+];
+
+```
+
+- In `seeder.js` add this :
+
+```
+import mongoose from "mongoose";
+import products from "./data.js";
+import product from "../models/product.js";
+
+const seedProducts = async () => {
+  try {
+    await mongoose.connect("mongodb://localhost:27017/shopit-v1");
+
+    await product.deleteMany();
+    console.log("Products are deleted");
+
+    await product.insertMany(products);
+    console.log("All Products are added");
+    process.exit();
+  } catch (error) {
+    console.log(error.message);
+    process.exit();
+  }
+};
+
+seedProducts();
+
+```
+
+- In `package.json` file add this in `"scripts"` section : `"seeder": "node backend/seeder/seeder.js"`.
