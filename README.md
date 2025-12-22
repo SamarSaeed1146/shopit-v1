@@ -462,3 +462,78 @@ seedProducts();
 ```
 
 - In `package.json` file add this in `"scripts"` section : `"seeder": "node backend/seeder/seeder.js"`.
+
+#### step # 3:
+
+- Go to `productControllers.js` file & add this:
+
+```
+import Product from "../models/product.js";
+
+// create new product => /api/v1/products
+
+export const getProducts = async (req, res) => {
+  const products = await Product.find();
+  res.status(200).json({ products });
+};
+
+// Create new product => /api/v1/admin/products
+export const newProducts = async (req, res) => {
+  const product = await Product.create(req.body);
+  res.status(200).json({
+    product,
+  });
+};
+
+// Get single product details => /api/v1/products/:id
+export const getProductDetails = async (req, res) => {
+  const product = await Product.findById(req?.params?.id);
+  if (!product) {
+    return res.status(404).json({ error: "Product not found" });
+  }
+  res.status(200).json({
+    product,
+  });
+};
+
+// Update product details => /api/v1/products/:id
+export const updateProduct = async (req, res) => {
+  let product = await Product.findById(req?.params?.id);
+  if (!product) {
+    return res.status(404).json({ error: "Product not found" });
+  }
+
+  product = await Product.findByIdAndUpdate(req?.params?.id, req.body, {
+    new: true,
+    runValidators: true,
+    useFindAndModify: false,
+  });
+  res.status(200).json({
+    product,
+  });
+};
+
+```
+
+#### step # 4:
+
+- Go to `product.js` file in backend/routes/products.js & add this:
+
+```
+import express from "express";
+import {
+  getProducts,
+  updateProduct,
+} from "../controllers/productControllers.js";
+const router = express.Router();
+
+router.route("/products").get(getProducts);
+router.route("/admin/products").post(getProducts);
+
+router.route("/products/:id").get(getProductDetails);
+router.route("/products/:id").put(updateProduct);
+
+export default router;
+
+```
+
