@@ -759,3 +759,182 @@ export const deleteProduct = async (req, res) => {
 };
 
 ```
+
+#### step # 5:
+
+- Update the `config.env` file :
+
+```
+port=3000
+NODE_ENV=DEVELOPMENT
+
+DB_LOCAL_URI=mongodb://127.0.0.1:27017/shopit-v1
+DB_URI=mongodb://127.0.0.1:27017/shopit-v1
+```
+
+#### step # 6:
+
+- In backend/middlewares make a new file `catchAsyncErrors.js`:
+
+```
+export default (controllerFunction) => (req, res, next) => {
+  Promise.resolve(controllerFunction(req, res, next)).catch(next);
+};
+
+```
+
+#### step # 7:
+
+- Make a changes in `productControllers.js` file:
+
+```
+import catchAsyncErrors from "../middlewares/catchAsyncErrors.js";
+import Product from "../models/product.js";
+import ErrorHandler from "../utils/errorHandler.js";
+
+// create new product => /api/v1/products
+
+export const getProducts = async (req, res) => {
+  const products = await Product.find();
+  res.status(200).json({ products });
+};
+
+// Create new product => /api/v1/admin/products
+export const newProducts = catchAsyncErrors(async (req, res) => {
+  const product = await Product.create(req.body);
+  res.status(200).json({
+    product,
+  });
+});
+
+// Get single product details => /api/v1/products/:id
+export const getProductDetails = catchAsyncErrors(async (req, res, next) => {
+  const product = await Product.findById(req?.params?.id);
+  if (!product) {
+    return next(new ErrorHandler("Product not found", 404));
+  }
+  res.status(200).json({
+    product,
+  });
+});
+
+// Update product details => /api/v1/products/:id
+export const updateProduct = catchAsyncErrors(async (req, res) => {
+  let product = await Product.findById(req?.params?.id);
+  if (!product) {
+    return next(new ErrorHandler("Product not found", 404));
+  }
+
+  product = await Product.findByIdAndUpdate(req?.params?.id, req.body, {
+    new: true,
+    runValidators: true,
+    useFindAndModify: false,
+  });
+  res.status(200).json({
+    product,
+  });
+});
+
+// Delete product => /api/v1/products/:id
+export const deleteProduct = catchAsyncErrors(async (req, res) => {
+  const product = await Product.findById(req?.params?.id);
+  if (!product) {
+    return next(new ErrorHandler("Product not found", 404));
+  }
+  await product.delete();
+  res.status(200).json({
+    message: "Product deleted successfully",
+  });
+});
+
+```
+
+#### step # 8:
+
+- Make some change in errors.js file /backend/middlewares/errors.js :
+
+```
+import ErrorHandler from "../utils/errorHandler";
+
+export default (err, req, res, next) => {
+  let error = {
+    statusCode: err?.statusCode || 500,
+    message: err?.message || "Internal Server Error",
+  };
+
+  // Handle Invalid MongoDB ID Error
+
+  if (err.name === "CastError") {
+    const message = `Resource not found. Invalid: ${err?.path}`;
+    error = new ErrorHandler(message, 404);
+  }
+  // Handle Mongoose Validation Error
+  if (err.name === "ValidationError") {
+    const message = Object.values(err.errors).map((value) => value.message);
+    error = new ErrorHandler(message, 400);
+  }
+
+  if (process.env.NODE_ENV === "DEVELOPMENT") {
+    res.status(error.statusCode).json({
+      message: error.message,
+      error: err,
+      stack: err?.stack,
+    });
+    if (process.env.NODE_ENV === "PRODUCTION") {
+      res.status(error.statusCode).json({ message: error.message });
+    }
+  }
+};
+
+```
+
+#### step # 9:
+
+- Make some changes in app.js file:
+
+```
+import express from "express";
+const app = express();
+import dotenv from "dotenv";
+import { connectDatabase } from "./config/dbConnect.js";
+import errorMiddleware from "./middlewares/errors.js";
+
+// Handle uncaught exceptions
+process.on("uncaughtException", (err) => {
+  console.log(`Error: ${err.message}`);
+  console.log("Shutting down the server due to Uncaught Exception");
+  process.exit(1);
+});
+
+dotenv.config({ path: "backend/config/config.env" });
+
+connectDatabase();
+
+app.use(express.json());
+
+console.log(hello);
+
+import productRoutes from "./routes/products.js";
+
+app.use("/api/v1", productRoutes);
+
+app.use(errorMiddleware);
+
+const server = app.listen(process.env.PORT, () => {
+  console.log(
+    `Server is running on port ${process.env.PORT} in ${process.env.NODE_ENV} mode.`
+  );
+});
+
+// Unhandled Promise Rejection Handling
+
+process.on("unhandledRejection", (err) => {
+  console.log(`Error: ${err.message}`);
+  console.log("Shutting down the server due to Unhandled Promise Rejection");
+
+  server.close(() => {
+    process.exit(1);
+  });
+});
+
+```
