@@ -1,12 +1,18 @@
 import catchAsyncErrors from "../middlewares/catchAsyncErrors.js";
 import Product from "../models/product.js";
+import APIFilters from "../utils/apiFilters.js";
 import ErrorHandler from "../utils/errorHandler.js";
 
 // create new product => /api/v1/products
 
 export const getProducts = async (req, res) => {
-  const products = await Product.find();
-  res.status(200).json({ products });
+  const resPerPage = 4;
+  const ApiFilters = new APIFilters(Product, req.query).search().filter();
+  let products = await ApiFilters.query;
+  let filteredProductsCount = products.length;
+  ApiFilters.pagination(resPerPage);
+  products = await ApiFilters.query.clone();
+  res.status(200).json({ products, filteredProductsCount, resPerPage });
 };
 
 // Create new product => /api/v1/admin/products
