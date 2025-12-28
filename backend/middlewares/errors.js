@@ -1,4 +1,4 @@
-import ErrorHandler from "../utils/errorHandler";
+import ErrorHandler from "../utils/errorHandler.js";
 
 export default (err, req, res, next) => {
   let error = {
@@ -15,6 +15,21 @@ export default (err, req, res, next) => {
   // Handle Mongoose Validation Error
   if (err.name === "ValidationError") {
     const message = Object.values(err.errors).map((value) => value.message);
+    error = new ErrorHandler(message, 400);
+  }
+  // Handle Mongoose Duplicate Key Error
+  if (err.code === 11000) {
+    const message = `Duplicate ${Object.keys(err.keyValue)} entered`;
+    error = new ErrorHandler(message, 400);
+  }
+  // Handle JWT Error
+  if (err.name === "JsonWebTokenError") {
+    const message = "JSON Web Token is invalid. Try again later";
+    error = new ErrorHandler(message, 400);
+  }
+  // Handle JWT Expire Error
+  if (err.name === "TokenExpiredError") {
+    const message = "JSON Web Token is expired. Try again later";
     error = new ErrorHandler(message, 400);
   }
 
