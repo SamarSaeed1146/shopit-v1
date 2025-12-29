@@ -1328,3 +1328,292 @@ router
 export default router;
 
 ```
+
+## Order Resource
+
+- Go to backend/models & create new file `order.js` then add this :
+
+```
+import mongoose from "mongoose";
+
+const orderSchema = new mongoose.Schema(
+  {
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    orderItems: [
+      {
+        name: { type: String, required: true },
+        quantity: { type: Number, required: true },
+        image: { type: String, required: true },
+        price: { type: Number, required: true },
+        product: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Product",
+          required: true,
+        },
+      },
+    ],
+    shippingInfo: {
+      address: { type: String, required: true },
+      city: { type: String, required: true },
+      country: { type: String, required: true },
+      zipCode: { type: Number, required: true },
+      phoneNo: { type: Number, required: true },
+    },
+    paymentMethod: {
+      type: String,
+      required: [true, "Please select payment method"],
+      enum: {
+        values: ["COD", "Card"],
+        message: "Please select COD or Card payment method",
+      },
+    },
+    paymentInfo: {
+      id: { type: String },
+      status: { type: String },
+    },
+    itemsPrice: {
+      type: Number,
+      required: true,
+    },
+    taxAmount: {
+      type: Number,
+      required: true,
+    },
+    shippingAmount: {
+      type: Number,
+      required: true,
+    },
+    totalAmount: {
+      type: Number,
+      required: true,
+    },
+    orderStatus: {
+      type: String,
+      enum: {
+        values: ["Processing", "Shipped", "Delivered"],
+        message: "Please select correct order status",
+      },
+      default: "Processing",
+    },
+
+    deliveredAt: {
+      type: Date,
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
+
+export default mongoose.model("Order", orderSchema);
+
+```
+
+- Go to backend/controllers folder & create new file `orderControllers.js` then add this :
+
+```
+import catchAsyncErrors from "../middlewares/catchAsyncErrors.js";
+import Order from "../models/order.js";
+import ErrorHandler from "../utils/errorHandler.js";
+
+// Create a new order => /api/v1/order/new
+export const newOrder = catchAsyncErrors(async (req, res) => {
+  const {
+    shippingInfo,
+    orderItems,
+    paymentMethod,
+    itemsPrice,
+    taxAmount,
+    shippingAmount,
+    totalAmount,
+    paymentInfo,
+  } = req.body;
+
+  const order = await Order.create({
+    shippingInfo,
+    orderItems,
+    paymentMethod,
+    itemsPrice,
+    taxAmount,
+    shippingAmount,
+    totalAmount,
+    paymentInfo,
+    user: req.user._id,
+  });
+  res.status(201).json({
+    success: true,
+    order,
+  });
+});
+
+// Get order details => /api/v1/order/:id
+export const getOrderDetails = catchAsyncErrors(async (req, res, next) => {
+  const order = await Order.findById(req.params.id).populate(
+    "user",
+    "name email"
+  );
+
+  if (!order) {
+    return next(new ErrorHandler("Order not found with this ID", 404));
+  }
+
+  res.status(200).json({
+    order,
+  });
+});
+
+// Get current user's orders => /api/v1/me/orders
+export const myOrders = catchAsyncErrors(async (req, res, next) => {
+  const orders = await Order.find({ user: req.user._id });
+
+  res.status(200).json({
+    orders,
+  });
+});
+
+// Get all orders - Admin => /api/v1/admin/orders
+export const allOrders = catchAsyncErrors(async (req, res, next) => {
+  const orders = await Order.find();
+
+  res.status(200).json({
+    orders,
+  });
+});
+
+// Update order - Admin => /api/v1/admin/order/:id
+export const updateOrder = catchAsyncErrors(async (req, res, next) => {
+  const order = await Order.findById(req.params.id);
+
+  if (!order) {
+    return next(new ErrorHandler("Order not found with this ID", 404));
+  }
+
+  if (order.orderStatus === "Delivered") {
+    return next(new ErrorHandler("You have already delivered this order", 400));
+  }
+
+  order?.orderItems?.forEach(async (item) => {
+    const product = await product.findById(item?.product?.toString());
+    if (product) {
+      return next(new ErrorHandler("Product not found with this ID", 404));
+    }
+    product.stock = product.stock - item.quantity;
+    await product.save();
+  });
+
+  order.orderStatus = req.body.status;
+  order.deliveredAt = Date.now();
+
+  res.status(200).json({
+    success: true,
+    order,
+  });
+});
+
+// Delete order - Admin => /api/v1/admin/order/:id
+export const deleteOrder = catchAsyncErrors(async (req, res, next) => {
+  const order = await Order.findById(req.params.id);
+
+  if (!order) {
+    return next(new ErrorHandler("Order not found with this ID", 404));
+  }
+
+  await order.deleteOne();
+
+  res.status(200).json({
+    success: true,
+    message: "Order deleted successfully",
+  });
+});
+
+```
+
+- Go to backend/routes folder then create new file `order.js` & add this :
+
+```
+import express from "express";
+const router = express.Router();
+
+import { authorizedRoles, isAuthenticated } from "../middlewares/auth.js";
+import {
+  allOrders,
+  deleteOrder,
+  getOrderDetails,
+  myOrders,
+  newOrder,
+  updateOrder,
+} from "../controllers/orderControllers.js";
+
+router.route("/order/new").post(isAuthenticated, newOrder);
+router.route("/order/:id").get(isAuthenticated, getOrderDetails);
+router.route("/me/orders").get(isAuthenticated, myOrders);
+router
+  .route("/admin/orders")
+  .get(isAuthenticated, authorizedRoles("admin"), allOrders);
+router
+  .route("/admin/order/:id")
+  .put(isAuthenticated, authorizedRoles("admin"), updateOrder)
+  .delete(isAuthenticated, authorizedRoles("admin"), deleteOrder);
+
+export default router;
+
+```
+
+- Go to app.js file and update this :
+
+```
+import express from "express";
+const app = express();
+import dotenv from "dotenv";
+import cookieParser from "cookie-parser";
+import { connectDatabase } from "./config/dbConnect.js";
+import errorMiddleware from "./middlewares/errors.js";
+
+// Handle uncaught exceptions
+process.on("uncaughtException", (err) => {
+  console.log(`Error: ${err.message}`);
+  console.log("Shutting down the server due to Uncaught Exception");
+  process.exit(1);
+});
+
+dotenv.config({ path: "backend/config/config.env" });
+
+connectDatabase();
+
+app.use(express.json());
+app.use(cookieParser());
+
+import productRoutes from "./routes/products.js";
+import authRoutes from "./routes/auth.js";
+import orderRoutes from "./routes/order.js";
+
+app.use("/api/v1", orderRoutes);
+
+app.use("/api/v1", authRoutes);
+
+app.use("/api/v1", productRoutes);
+
+app.use(errorMiddleware);
+
+const server = app.listen(process.env.PORT, () => {
+  console.log(
+    `Server is running on port ${process.env.PORT} in ${process.env.NODE_ENV} mode.`
+  );
+});
+
+// Unhandled Promise Rejection Handling
+
+process.on("unhandledRejection", (err) => {
+  console.log(`Error: ${err.message}`);
+  console.log("Shutting down the server due to Unhandled Promise Rejection");
+
+  server.close(() => {
+    process.exit(1);
+  });
+});
+
+```
