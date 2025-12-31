@@ -1,11 +1,5 @@
 # Getting Started with Create React App
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
-
-## Available Scripts
-
-In the project directory, you can run:
-
 ### `npm start`
 
 Runs the app in the development mode.\
@@ -847,5 +841,121 @@ function App() {
 }
 
 export default App;
+
+```
+
+- Install Package `npm i react-router-dom --save`
+- After installing package add this `frontend/src/App.js` file :
+
+```
+import "./App.css";
+
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+
+import Home from "./components/Home";
+import Footer from "./components/layout/Footer";
+import Header from "./components/layout/Header";
+
+function App() {
+  return (
+    <Router>
+      <div className="App">
+        <Header />
+        <div className="container">
+          <Routes>
+            <Route path="/" element={<Home />} />
+          </Routes>
+        </div>
+        <Footer />
+      </div>
+    </Router>
+  );
+}
+
+export default App;
+
+```
+
+- Go to frontend/src/components/Home.jsx file & add this :
+
+```
+import React from "react";
+import MetaData from "./layout/metaData";
+
+export const Home = () => {
+  return (
+    <>
+      <MetaData title={"Buy Best Products Online"} />
+      <div class="row">
+        <div class="col-12 col-sm-6 col-md-12">
+          <h1 id="products_heading" class="text-secondary">
+            Latest Products
+          </h1>
+
+          <section id="products" class="mt-5">
+            <div className="row">
+              <div className="col-sm-12 col-md-6 col-lg-3 my-3">
+                <div className="card p-3 rounded">
+                  <img
+                    className="card-img-top mx-auto"
+                    src="./images/default_product.png"
+                    alt=""
+                  />
+                  <div className="card-body ps-3 d-flex justify-content-center flex-column">
+                    <h5 className="card-title">
+                      <a href="/product/1">Product Name 1</a>
+                    </h5>
+                    <div className="ratings mt-auto d-flex">
+                      <div className="star-ratings">
+                        <i className="fa fa-star star-active"></i>
+                        <i className="fa fa-star star-active"></i>
+                        <i className="fa fa-star star-active"></i>
+                        <i className="fa fa-star star-active"></i>
+                        <i className="fa fa-star star-active"></i>
+                      </div>
+                      <span id="no_of_reviews" className="pt-2 ps-2">
+                        {" "}
+                        (0){" "}
+                      </span>
+                    </div>
+                    <p className="card-text mt-2">$100</p>
+                    <a
+                      href="/product/1"
+                      id="view_btn"
+                      className="btn btn-block"
+                    >
+                      View Details
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </>
+  );
+};
+export default Home;
+
+```
+
+- install a package `npm i react-helmet --save`
+- Make a new file of `MetaData.jsx` file
+- At `frontend/src/components/layout/MeteData.jsx` add this :
+
+```
+import React from "react";
+import { Helmet } from "react-helmet";
+
+const MetaData = ({ title }) => {
+  return (
+    <Helmet>
+      <title>{`${title} - Shop IT`}</title>
+    </Helmet>
+  );
+};
+
+export default MetaData;
 
 ```
