@@ -959,3 +959,594 @@ const MetaData = ({ title }) => {
 export default MetaData;
 
 ```
+
+## Implementing Redux Toolkit
+
+#### Step # 1:
+
+- Install package `npm install @reduxjs/toolkit react-redux --save `
+- Go to `frontend/src` folder create new folders & file `/redux/api/productsApi.js`
+- Add this to `productsApi.js` file :
+
+```
+import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+
+export const productsApi = createApi({
+  reducerPath: "productsApi",
+  baseQuery: fetchBaseQuery({ baseUrl: "/api/v1" }),
+  endpoints: (builder) => ({
+    getProducts: builder.query({
+      query: (params) => "/products",
+    }),
+    getProductDetails: builder.query({
+      query: (id) => `/products/${id}`,
+    }),
+  }),
+});
+
+export const { useGetProductsQuery, useGetProductDetailsQuery } = productsApi;
+
+```
+
+#### Step # 2:
+
+- Go on `frontend/src/redux` folders create new file `store.js`
+
+```
+import { configureStore } from "@reduxjs/toolkit";
+import { productsApi } from "./api/productsApi";
+
+export const store = configureStore({
+  reducer: {
+    [productsApi.reducerPath]: productsApi.reducer,
+  },
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware().concat(productsApi.middleware),
+});
+
+```
+
+#### Step # 3:
+
+- Go to `frontend/src/layout` folder then create new file `Loader.jsx` & Add this :
+
+```
+import React from "react";
+
+function Loader() {
+  return <div className="loader"></div>;
+}
+
+export default Loader;
+
+```
+
+#### Step # 4:
+
+- Go on `frontend/src/components` folder then create new folder `product`
+- In `product` folder create new files `productDetails.jsx & productItem.jsx`
+- Add this in `productDetails.jsx` :
+
+```
+import { useEffect, useState } from "react";
+import { useGetProductDetailsQuery } from "../../redux/api/productsApi";
+import { useParams } from "react-router-dom";
+import toast from "react-hot-toast";
+import StarRatings from "react-star-ratings";
+import Loader from "../layout/Loader";
+
+function ProductDetails() {
+  const params = useParams();
+
+  const { data, isLoading, error, isError } = useGetProductDetailsQuery(
+    params.id
+  );
+  const product = data?.product;
+
+  const [activeImg, setActiveImg] = useState("");
+
+  useEffect(() => {
+    if (product) {
+      setActiveImg(
+        product?.images[0]
+          ? product?.images[0]?.url
+          : "/images/default_product.png"
+      );
+    }
+  }, [product]);
+
+  useEffect(() => {
+    if (isError) {
+      toast.error(error?.data?.message);
+    }
+  }, [isError, error]);
+
+  if (isLoading) return <Loader />;
+  return (
+    <div className="row d-flex justify-content-around">
+      <div className="col-12 col-lg-5 img-fluid" id="product_image">
+        <div className="p-3">
+          <img
+            className="d-block w-100"
+            src={activeImg}
+            alt={product?.name}
+            width="340"
+            height="390"
+          />
+        </div>
+        <div className="row justify-content-start mt-5">
+          {product?.images?.map((img) => (
+            <div className="col-2 ms-4 mt-2">
+              <button
+                type="button"
+                className="p-0 border-0 bg-transparent"
+                aria-label="View product image"
+              >
+                <img
+                  className={`d-block border rounded p-3 cursor-pointer ${
+                    img?.url === activeImg ? "border-primary" : ""
+                  }`}
+                  height="100"
+                  width="100"
+                  src={img?.url}
+                  alt={img?.url}
+                  onClick={(e) => setActiveImg(img?.url)}
+                />
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="col-12 col-lg-5 mt-5">
+        <h3>{product?.name}</h3>
+        <p id="product_id">Product # {product?._id}</p>
+
+        <hr />
+
+        <div className="d-flex">
+          <StarRatings
+            rating={product?.ratings}
+            starRatedColor="rgb(20, 20, 20)"
+            numberOfStars={5}
+            name="rating"
+            starDimension="20px"
+            starSpacing="3px"
+          />
+          <span id="no-of-reviews" className="pt-1 ps-2">
+            {" "}
+            ({product?.numOfReviews} Reviews){" "}
+          </span>
+        </div>
+        <hr />
+
+        <p id="product_price">${product?.price}</p>
+        <div className="stockCounter d-inline">
+          <span className="btn btn-danger minus">-</span>
+          <input
+            type="number"
+            className="form-control count d-inline"
+            value="1"
+            readonly
+          />
+          <span className="btn btn-primary plus">+</span>
+        </div>
+        <button
+          type="button"
+          id="cart_btn"
+          className="btn btn-primary d-inline ms-4"
+          disabled=""
+        >
+          Add to Cart
+        </button>
+
+        <hr />
+
+        <p>
+          Status:{" "}
+          <span
+            id="stock_status"
+            className={product?.stock > 0 ? "text-success" : "text-danger"}
+          >
+            {product?.stock > 0 ? "In Stock" : "Out of Stock"}
+          </span>
+        </p>
+
+        <hr />
+
+        <h4 className="mt-2">Description:</h4>
+        <p>{product?.description}</p>
+        <hr />
+        <p id="product_seller mb-3">
+          Sold by: <strong>{product?.seller}</strong>
+        </p>
+
+        <div className="alert alert-danger my-5" type="alert">
+          Login to post your review.
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default ProductDetails;
+
+```
+
+- Add this `productItem.jsx` :
+
+```
+import { Link } from "react-router-dom";
+import { StarRatings } from "react-star-ratings";
+
+function ProductItem({ product }) {
+  return (
+    <div className="col-sm-12 col-md-6 col-lg-3 my-3">
+      <div className="card p-3 rounded">
+        <img
+          className="card-img-top mx-auto"
+          src={product?.images[0]?.url}
+          alt={product?.name}
+        />
+        <div className="card-body ps-3 d-flex justify-content-center flex-column">
+          <h5 className="card-title">
+            <Link to={`/product/${product?._id}`}>{product?.name}</Link>
+          </h5>
+          <div className="ratings mt-auto d-flex">
+            <StarRatings
+              rating={product?.ratings}
+              starRatedColor="rgb(20, 20, 20)"
+              numberOfStars={5}
+              name="rating"
+              starDimension="20px"
+              starSpacing="3px"
+            />
+            <span id="no_of_reviews" className="pt-2 ps-2">
+              {" "}
+              [{product?.numOfReviews}]
+            </span>
+          </div>
+          <p className="card-text mt-2">${product?.price}</p>
+          <Link
+            to={`/product/${product?._id}`}
+            id="view_btn"
+            className="btn btn-block"
+          >
+            View Details
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default ProductItem;
+
+```
+
+#### Step # 5:
+
+- In `package.json` file add Proxy
+
+```
+{
+  "name": "frontend",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@reduxjs/toolkit": "^2.11.2",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.1",
+    "@testing-library/user-event": "^13.5.0",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "react-helmet": "^6.1.0",
+    "react-hot-toast": "^2.6.0",
+    "react-redux": "^9.2.0",
+    "react-router-dom": "^7.11.0",
+    "react-scripts": "5.0.1",
+    "react-star-ratings": "^2.3.0",
+    "web-vitals": "^2.1.4"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "proxy": "http://localhost:3000"
+}
+
+```
+
+#### Step # 6:
+
+- Go on frontend/src/app.js file & add this :
+
+```
+import "./App.css";
+
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+
+import Home from "./components/Home";
+import Footer from "./components/layout/Footer";
+import Header from "./components/layout/Header";
+import { Toaster } from "react-hot-toast";
+import ProductDetails from "./components/product/productDetails";
+
+function App() {
+  return (
+    <Router>
+      <div className="App">
+        <Toaster position="top-center" />
+        <Header />
+        <div className="container">
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/product/:id" element={<ProductDetails />} />
+          </Routes>
+        </div>
+        <Footer />
+      </div>
+    </Router>
+  );
+}
+
+export default App;
+
+```
+
+- Go on frontend/src/index.js file & add this :
+
+```
+import React from "react";
+import ReactDOM from "react-dom/client";
+import App from "./App";
+import { Provider } from "react-redux";
+import { store } from "./redux/store";
+
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(
+  <React.StrictMode>
+    <Provider store={store}>
+      <App />
+    </Provider>
+  </React.StrictMode>
+);
+
+```
+
+#### Step # 7:
+
+- Go to folder frontend/src/components/Home.jsx & add this :
+
+```
+import React, { useEffect } from "react";
+import MetaData from "./layout/metaData";
+import { useGetProductsQuery } from "../redux/api/productsApi";
+import ProductItem from "./product/productItem.jsx";
+import Loader from "./layout/Loader.jsx";
+import toast from "react-hot-toast";
+
+export const Home = () => {
+  const { data, isLoading, error, isError } = useGetProductsQuery();
+
+  useEffect(() => {
+    if (isError) {
+      toast.error(error?.data?.message);
+    }
+  }, [isError, error]);
+
+  if (isLoading) return <Loader />;
+
+  return (
+    <>
+      <MetaData title={"Buy Best Products Online"} />
+      <div class="row">
+        <div class="col-12 col-sm-6 col-md-12">
+          <h1 id="products_heading" class="text-secondary">
+            Latest Products
+          </h1>
+
+          <section id="products" class="mt-5">
+            <div className="row">
+              {data?.products?.map((product) => (
+                <ProductItem product={product} />
+              ))}
+            </div>
+          </section>
+        </div>
+      </div>
+    </>
+  );
+};
+export default Home;
+
+```
+
+#### Step # 8:
+
+- Go on backend/controllers/productControllers.js file & Add this:
+
+```
+import catchAsyncErrors from "../middlewares/catchAsyncErrors.js";
+import Product from "../models/product.js";
+import APIFilters from "../utils/apiFilters.js";
+import ErrorHandler from "../utils/errorHandler.js";
+
+// create new product => /api/v1/products
+
+export const getProducts = catchAsyncErrors(async (req, res, next) => {
+  const resPerPage = 4;
+  const ApiFilters = new APIFilters(Product, req.query).search().filter();
+  let products = await ApiFilters.query;
+  let filteredProductsCount = products.length;
+  ApiFilters.pagination(resPerPage);
+  return next(new ErrorHandler("Hello", 400));
+  products = await ApiFilters.query.clone();
+  res.status(200).json({ products, filteredProductsCount, resPerPage });
+});
+
+// Create new product => /api/v1/admin/products
+export const newProducts = catchAsyncErrors(async (req, res) => {
+  req.body.user = req.user.id;
+
+  const product = await Product.create(req.body);
+  res.status(200).json({
+    product,
+  });
+});
+
+// Get single product details => /api/v1/products/:id
+export const getProductDetails = catchAsyncErrors(async (req, res, next) => {
+  const product = await Product.findById(req?.params?.id);
+  if (!product) {
+    return next(new ErrorHandler("Product not found", 404));
+  }
+  res.status(200).json({
+    product,
+  });
+});
+
+// Update product details => /api/v1/products/:id
+export const updateProduct = catchAsyncErrors(async (req, res) => {
+  let product = await Product.findById(req?.params?.id);
+  if (!product) {
+    return next(new ErrorHandler("Product not found", 404));
+  }
+
+  product = await Product.findByIdAndUpdate(req?.params?.id, req.body, {
+    new: true,
+    runValidators: true,
+    useFindAndModify: false,
+  });
+  res.status(200).json({
+    product,
+  });
+});
+
+// Delete product => /api/v1/products/:id
+export const deleteProduct = catchAsyncErrors(async (req, res) => {
+  const product = await Product.findById(req?.params?.id);
+  if (!product) {
+    return next(new ErrorHandler("Product not found", 404));
+  }
+  await product.delete();
+  res.status(200).json({
+    message: "Product deleted successfully",
+  });
+});
+
+// Create/Update product Review => /api/v1/reviews
+export const createProductReview = catchAsyncErrors(async (req, res) => {
+  const { rating, comment, productId } = req.body;
+
+  const review = {
+    user: req?.user?._id,
+    rating: Number(rating),
+    comment,
+  };
+
+  const product = await Product.findById(productId);
+
+  if (!product) {
+    return next(new ErrorHandler("Product not found", 404));
+  }
+
+  const isReviewed = product?.reviews?.find(
+    (rev) => rev.user.toString() === req.user._id.toString()
+  );
+
+  if (isReviewed) {
+    product.reviews.forEach((rev) => {
+      if (rev.user.toString() === req?.user?._id.toString()) {
+        (rev.rating = rating), (rev.comment = comment);
+      }
+    });
+  } else {
+    product.reviews.push(review);
+    product.numOfReviews = product.reviews.length;
+  }
+
+  product.ratings =
+    product.reviews.reduce((acc, item) => item.rating + acc, 0) /
+    product.reviews.length;
+
+  await product.save({ validateBeforeSave: false });
+
+  res.status(200).json({
+    success: true,
+  });
+});
+
+// Delete product Review => /api/v1/admin/reviews
+export const deleteReview = catchAsyncErrors(async (req, res, next) => {
+  const product = await Product.findById(req?.query?.productId);
+
+  if (!product) {
+    return next(new ErrorHandler("Product not found", 404));
+  }
+
+  const reviews = product?.reviews?.filter(
+    (rev) => rev._id.toString() !== req?.query?.id.toString()
+  );
+
+  const numOfReviews = reviews.length;
+
+  const ratings =
+    product.reviews.reduce((acc, item) => item.rating + acc, 0) /
+    reviews.length;
+
+  await Product.findByIdAndUpdate(
+    req?.query?.productId,
+    {
+      reviews,
+      ratings,
+      numOfReviews,
+    },
+    {
+      new: true,
+      runValidators: true,
+      useFindAndModify: false,
+    }
+  );
+
+  res.status(200).json({
+    success: true,
+  });
+});
+
+// Get product reviews => /api/v1/reviews
+
+export const getProductReviews = catchAsyncErrors(async (req, res, next) => {
+  const product = await Product.findById(req.query.id);
+
+  if (!product) {
+    return next(new ErrorHandler("Product not found", 404));
+  }
+
+  res.status(200).json({
+    reviews: product.reviews,
+  });
+});
+
+```

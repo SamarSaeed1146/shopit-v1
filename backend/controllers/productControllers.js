@@ -5,15 +5,16 @@ import ErrorHandler from "../utils/errorHandler.js";
 
 // create new product => /api/v1/products
 
-export const getProducts = async (req, res) => {
+export const getProducts = catchAsyncErrors(async (req, res, next) => {
   const resPerPage = 4;
   const ApiFilters = new APIFilters(Product, req.query).search().filter();
   let products = await ApiFilters.query;
   let filteredProductsCount = products.length;
   ApiFilters.pagination(resPerPage);
+  return next(new ErrorHandler("Hello", 400));
   products = await ApiFilters.query.clone();
   res.status(200).json({ products, filteredProductsCount, resPerPage });
-};
+});
 
 // Create new product => /api/v1/admin/products
 export const newProducts = catchAsyncErrors(async (req, res) => {
