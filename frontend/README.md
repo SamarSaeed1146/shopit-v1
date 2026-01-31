@@ -1550,3 +1550,149 @@ export const getProductReviews = catchAsyncErrors(async (req, res, next) => {
 });
 
 ```
+
+## Adding Pagination, Search & Filters
+
+#### Pagination
+
+- Go to Frontend/src/components/layout folder then create new file CostomPagination.jsx
+
+```
+/* eslint-disable no-undef */
+import React, { useEffect, useState } from "react";
+import Pagination from "react-js-pagination";
+import { useSearchParams } from "react-router-dom";
+
+const CustomPagination = ({ resPerPage, filteredProductsCount }) => {
+  const [currentPage, setCurrentPage] = useState;
+
+  let [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+
+  const page = Number(searchParams.get("page")) || 1;
+
+  useEffect(() => {
+    setCurrentPage(page);
+  }, [page, setCurrentPage]);
+
+  const setCurrentPageNo = (pageNumber) => {
+    setCurrentPage(pageNumber);
+
+    if (searchParams.has("page")) {
+      searchParams.set("page", pageNumber);
+    } else {
+      searchParams.append("page", pageNumber);
+    }
+
+    const path = window.location.pathname + "?" + searchParams.toString();
+    navigate(path);
+  };
+
+  return (
+    <div className="d-flex justify-content-center my-5">
+      {filteredProductsCount > resPerPage && (
+        <Pagination
+          activePage={currentPage}
+          itemsCountPerPage={resPerPage}
+          totalItemsCount={filteredProductsCount}
+          onChange={setCurrentPageNo}
+          nextPageText={"Next"}
+          prevPageText={"Prev"}
+          firstPageText={"First"}
+          lastPageText={"Last"}
+          itemClass="page-item"
+          linkClass="page-link"
+        />
+      )}
+    </div>
+  );
+};
+
+export default CustomPagination;
+
+```
+
+- Go to Frontend/src/componentsHome.jsx folder & add this :
+
+```
+import React, { useEffect } from "react";
+import MetaData from "./layout/metaData";
+import { useGetProductsQuery } from "../redux/api/productsApi";
+import ProductItem from "./product/productItem.jsx";
+import Loader from "./layout/Loader.jsx";
+import toast from "react-hot-toast";
+import CustomPagination from "./layout/CostomPaginaton.jsx";
+
+export const Home = () => {
+  // eslint-disable-next-line no-undef
+  let [searchParams] = useSearchParams();
+  const page = searchParams.get("page") || 1;
+
+  const params = { page };
+
+  const { data, isLoading, error, isError } = useGetProductsQuery(params);
+
+  useEffect(() => {
+    if (isError) {
+      toast.error(error?.data?.message);
+    }
+  }, [isError, error]);
+
+  if (isLoading) return <Loader />;
+
+  return (
+    <>
+      <MetaData title={"Buy Best Products Online"} />
+      <div class="row">
+        <div class="col-12 col-sm-6 col-md-12">
+          <h1 id="products_heading" class="text-secondary">
+            Latest Products
+          </h1>
+
+          <section id="products" class="mt-5">
+            <div className="row">
+              {data?.products?.map((product) => (
+                <ProductItem product={product} />
+              ))}
+            </div>
+          </section>
+
+          <CustomPagination
+            resPerPage={data?.resPerPage}
+            filteredProductsCount={data?.filteredProductsCount}
+          />
+        </div>
+      </div>
+    </>
+  );
+};
+export default Home;
+
+```
+
+- Go on frontend/src/redux/api/productsApi.js & add this
+
+```
+import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+
+export const productsApi = createApi({
+  reducerPath: "productsApi",
+  baseQuery: fetchBaseQuery({ baseUrl: "/api/v1" }),
+  endpoints: (builder) => ({
+    getProducts: builder.query({
+      query: (params) => ({
+        url: "/products",
+        params: {
+          page: params?.page,
+        },
+      }),
+    }),
+    getProductDetails: builder.query({
+      query: (id) => `/products/${id}`,
+    }),
+  }),
+});
+
+export const { useGetProductsQuery, useGetProductDetailsQuery } = productsApi;
+
+```

@@ -4,9 +4,16 @@ import { useGetProductsQuery } from "../redux/api/productsApi";
 import ProductItem from "./product/productItem.jsx";
 import Loader from "./layout/Loader.jsx";
 import toast from "react-hot-toast";
+import CustomPagination from "./layout/CostomPaginaton.jsx";
 
 export const Home = () => {
-  const { data, isLoading, error, isError } = useGetProductsQuery();
+  // eslint-disable-next-line no-undef
+  let [searchParams] = useSearchParams();
+  const page = searchParams.get("page") || 1;
+
+  const params = { page };
+
+  const { data, isLoading, error, isError } = useGetProductsQuery(params);
 
   useEffect(() => {
     if (isError) {
@@ -32,6 +39,11 @@ export const Home = () => {
               ))}
             </div>
           </section>
+
+          <CustomPagination
+            resPerPage={data?.resPerPage}
+            filteredProductsCount={data?.filteredProductsCount}
+          />
         </div>
       </div>
     </>
