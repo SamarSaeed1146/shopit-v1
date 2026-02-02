@@ -1980,3 +1980,260 @@ const Header = () => {
 export default Header;
 
 ```
+
+#### Filter By Price
+
+- Go to frontend/src/components/layout folder then create new file Filters.jsx then add code :
+
+```
+import { useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { getPriceQueryParams } from "../../helpers/helpers";
+
+function Filters() {
+  const [min, setMin] = useState("");
+  const [max, setMax] = useState("");
+
+  const navigate = useNavigate();
+
+  let [searchParams] = useSearchParams();
+
+  const handleButtonClick = (e) => {
+    e.preventDefault();
+
+    searchParams = getPriceQueryParams(searchParams, "min", min);
+    searchParams = getPriceQueryParams(searchParams, "max", max);
+
+    const path = window.location.pathname + "?" + searchParams.toString();
+    navigate(path);
+  };
+
+  return (
+    <div className="border p-3 filter">
+      <h3>Filters</h3>
+      <hr />
+      <h5 className="filter-heading mb-3">Price</h5>
+      <form
+        id="filter_form"
+        className="px-2"
+        onSubmit={handleButtonClick}
+      >
+        <div className="row">
+          <div className="col">
+            <input
+              type="text"
+              className="form-control"
+              placeholder="Min ($)"
+              name="min"
+              value={min}
+              onChange={(e) => setMin(e.target.value)}
+            />
+          </div>
+          <div className="col">
+            <input
+              type="text"
+              className="form-control"
+              placeholder="Max ($)"
+              name="max"
+              value={max}
+              onChange={(e) => setMax(e.target.value)}
+            />
+          </div>
+          <div className="col">
+            <button type="submit" className="btn btn-primary">
+              GO
+            </button>
+          </div>
+        </div>
+      </form>
+      <hr />
+      <h5 className="mb-3">Category</h5>
+
+      <div className="form-check">
+        <input
+          className="form-check-input"
+          type="checkbox"
+          name="category"
+          id="check4"
+          value="Category 1"
+        />
+        <label className="form-check-label" for="check4">
+          {" "}
+          Category 1{" "}
+        </label>
+      </div>
+      <div className="form-check">
+        <input
+          className="form-check-input"
+          type="checkbox"
+          name="category"
+          id="check5"
+          value="Category 2"
+        />
+        <label className="form-check-label" for="check5">
+          {" "}
+          Category 2{" "}
+        </label>
+      </div>
+
+      <hr />
+      <h5 className="mb-3">Ratings</h5>
+
+      <div className="form-check">
+        <input
+          className="form-check-input"
+          type="checkbox"
+          name="ratings"
+          id="check7"
+          value="5"
+        />
+        <label className="form-check-label" for="check7">
+          <span className="star-rating">★ ★ ★ ★ ★</span>
+        </label>
+      </div>
+      <div className="form-check">
+        <input
+          className="form-check-input"
+          type="checkbox"
+          name="ratings"
+          id="check8"
+          value="4"
+        />
+        <label className="form-check-label" for="check8">
+          <span className="star-rating">★ ★ ★ ★ ☆</span>
+        </label>
+      </div>
+    </div>
+  );
+}
+
+export default Filters;
+
+```
+
+- Go to frontend/src folder then create new folder `helpers` after that folder then create new file helpers.js then add this code :
+
+```
+export const getPriceQueryParams = (searchParams, key, value) => {
+  const hasValueInParam = searchParams.has(key);
+
+  if (value && hasValueInParam) {
+    searchParams.set(key, value);
+  } else if (value) {
+    searchParams.append(key, value);
+  } else if (hasValueInParam) {
+    searchParams.delete(key);
+  }
+
+  return searchParams;
+};
+
+```
+
+- go to frontend/src/components/Home.jsx folder & ADD this code :
+
+```
+import React, { useEffect } from "react";
+import MetaData from "./layout/metaData";
+import { useGetProductsQuery } from "../redux/api/productsApi";
+import ProductItem from "./product/productItem.jsx";
+import Loader from "./layout/Loader.jsx";
+import toast from "react-hot-toast";
+import CustomPagination from "./layout/CostomPaginaton.jsx";
+import Filters from "./layout/Filters.jsx";
+
+export const Home = () => {
+  // eslint-disable-next-line no-undef
+  let [searchParams] = useSearchParams();
+  const page = searchParams.get("page") || 1;
+  const keyword = searchParams.get("keyword") || "";
+  const min = searchParams.get("min") || "";
+  const max = searchParams.get("max") || "";
+
+  const params = { page, keyword, min, max };
+
+  min !== null && (params.min = min);
+  max !== null && (params.max = max);
+
+  const { data, isLoading, error, isError } = useGetProductsQuery(params);
+
+  useEffect(() => {
+    if (isError) {
+      toast.error(error?.data?.message);
+    }
+  }, [isError, error]);
+
+  const columnSize = keyword ? 4 : 3;
+
+  if (isLoading) return <Loader />;
+
+  return (
+    <>
+      <MetaData title={"Buy Best Products Online"} />
+      <div class="row">
+        {keyword && (
+          <div className="col-6 col-md-3 mt-5">
+            <Filters />
+          </div>
+        )}
+        <div
+          className={
+            keyword ? "col-12 col-sm-6 col-md-9" : "col-12 col-sm-6 col-md-12"
+          }
+        >
+          <h1 id="products_heading" class="text-secondary">
+            {keyword
+              ? `${data?.products?.length} Products found with ${keyword}`
+              : "Latest Products"}
+          </h1>
+
+          <section id="products" class="mt-5">
+            <div className="row">
+              {data?.products?.map((product) => (
+                <ProductItem product={product} columnSize={columnSize} />
+              ))}
+            </div>
+          </section>
+
+          <CustomPagination
+            resPerPage={data?.resPerPage}
+            filteredProductsCount={data?.filteredProductsCount}
+          />
+        </div>
+      </div>
+    </>
+  );
+};
+export default Home;
+
+```
+
+- Go to frontend/src/redux/api/productsApi.js then update the code :
+
+```
+import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+
+export const productsApi = createApi({
+  reducerPath: "productsApi",
+  baseQuery: fetchBaseQuery({ baseUrl: "/api/v1" }),
+  endpoints: (builder) => ({
+    getProducts: builder.query({
+      query: (params) => ({
+        url: "/products",
+        params: {
+          page: params?.page,
+          keyword: params?.keyword,
+          "price[gte]": params?.min,
+          "price[lte]": params?.max,
+        },
+      }),
+    }),
+    getProductDetails: builder.query({
+      query: (id) => `/products/${id}`,
+    }),
+  }),
+});
+
+export const { useGetProductsQuery, useGetProductDetailsQuery } = productsApi;
+
+```

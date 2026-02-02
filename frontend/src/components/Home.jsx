@@ -5,14 +5,20 @@ import ProductItem from "./product/productItem.jsx";
 import Loader from "./layout/Loader.jsx";
 import toast from "react-hot-toast";
 import CustomPagination from "./layout/CostomPaginaton.jsx";
+import Filters from "./layout/Filters.jsx";
 
 export const Home = () => {
   // eslint-disable-next-line no-undef
   let [searchParams] = useSearchParams();
   const page = searchParams.get("page") || 1;
   const keyword = searchParams.get("keyword") || "";
+  const min = searchParams.get("min") || "";
+  const max = searchParams.get("max") || "";
 
-  const params = { page, keyword };
+  const params = { page, keyword, min, max };
+
+  min !== null && (params.min = min);
+  max !== null && (params.max = max);
 
   const { data, isLoading, error, isError } = useGetProductsQuery(params);
 
@@ -32,7 +38,7 @@ export const Home = () => {
       <div class="row">
         {keyword && (
           <div className="col-6 col-md-3 mt-5">
-            <p>Filters</p>
+            <Filters />
           </div>
         )}
         <div
