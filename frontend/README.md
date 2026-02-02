@@ -1696,3 +1696,287 @@ export const productsApi = createApi({
 export const { useGetProductsQuery, useGetProductDetailsQuery } = productsApi;
 
 ```
+
+#### Search
+
+- Go on frontend/src/components/layout folder then create new file Search.jsx :
+
+```
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+
+const Search = () => {
+  const [keyword, setKeyword] = useState("");
+  const navigate = useNavigate();
+
+  const submitHandler = (e) => {
+    e.preventDefault();
+
+    if (keyword.trim()) {
+      navigate(`/?keyword/${keyword}`);
+    } else {
+      navigate("/");
+    }
+  };
+
+  return (
+    <form onSubmit={submitHandler}>
+      <div class="input-group">
+        <input
+          type="text"
+          id="search_field"
+          aria-describedby="search_btn"
+          class="form-control"
+          x
+          placeholder="Enter Product Name ..."
+          name="keyword"
+          value={keyword}
+          onChange={(e) => setKeyword(e.target.value)}
+        />
+        <button id="search_btn" className="btn" type="submit">
+          <i className="fa fa-search" aria-hidden="true"></i>
+        </button>
+      </div>
+    </form>
+  );
+};
+
+export default Search;
+
+```
+
+- Go on frontend/src/components/Home.jsx file then update the code :
+
+```
+import React, { useEffect } from "react";
+import MetaData from "./layout/metaData";
+import { useGetProductsQuery } from "../redux/api/productsApi";
+import ProductItem from "./product/productItem.jsx";
+import Loader from "./layout/Loader.jsx";
+import toast from "react-hot-toast";
+import CustomPagination from "./layout/CostomPaginaton.jsx";
+
+export const Home = () => {
+  // eslint-disable-next-line no-undef
+  let [searchParams] = useSearchParams();
+  const page = searchParams.get("page") || 1;
+  const keyword = searchParams.get("keyword") || "";
+
+  const params = { page, keyword };
+
+  const { data, isLoading, error, isError } = useGetProductsQuery(params);
+
+  useEffect(() => {
+    if (isError) {
+      toast.error(error?.data?.message);
+    }
+  }, [isError, error]);
+
+  const columnSize = keyword ? 4 : 3;
+
+  if (isLoading) return <Loader />;
+
+  return (
+    <>
+      <MetaData title={"Buy Best Products Online"} />
+      <div class="row">
+        {keyword && (
+          <div className="col-6 col-md-3 mt-5">
+            <p>Filters</p>
+          </div>
+        )}
+        <div
+          className={
+            keyword ? "col-12 col-sm-6 col-md-9" : "col-12 col-sm-6 col-md-12"
+          }
+        >
+          <h1 id="products_heading" class="text-secondary">
+            {keyword
+              ? `${data?.products?.length} Products found with ${keyword}`
+              : "Latest Products"}
+          </h1>
+
+          <section id="products" class="mt-5">
+            <div className="row">
+              {data?.products?.map((product) => (
+                <ProductItem product={product} columnSize={columnSize} />
+              ))}
+            </div>
+          </section>
+
+          <CustomPagination
+            resPerPage={data?.resPerPage}
+            filteredProductsCount={data?.filteredProductsCount}
+          />
+        </div>
+      </div>
+    </>
+  );
+};
+export default Home;
+
+```
+
+- Go to frontend/src/components/product/productItem.jsx file & update this code :
+
+```
+import { Link } from "react-router-dom";
+import { StarRatings } from "react-star-ratings";
+
+function ProductItem({ product, columnSize }) {
+  return (
+    <div className={`col-sm-12 col-md-6 col-lg-${columnSize} my-3`}>
+      <div className="card p-3 rounded">
+        <img
+          className="card-img-top mx-auto"
+          src={product?.images[0]?.url}
+          alt={product?.name}
+        />
+        <div className="card-body ps-3 d-flex justify-content-center flex-column">
+          <h5 className="card-title">
+            <Link to={`/product/${product?._id}`}>{product?.name}</Link>
+          </h5>
+          <div className="ratings mt-auto d-flex">
+            <StarRatings
+              rating={product?.ratings}
+              starRatedColor="rgb(20, 20, 20)"
+              numberOfStars={5}
+              name="rating"
+              starDimension="20px"
+              starSpacing="3px"
+            />
+            <span id="no_of_reviews" className="pt-2 ps-2">
+              {" "}
+              [{product?.numOfReviews}]
+            </span>
+          </div>
+          <p className="card-text mt-2">${product?.price}</p>
+          <Link
+            to={`/product/${product?._id}`}
+            id="view_btn"
+            className="btn btn-block"
+          >
+            View Details
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default ProductItem;
+
+```
+
+- Go to Frontend/src/redux/api/productsApi.jsx & update this code :
+
+```
+import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+
+export const productsApi = createApi({
+  reducerPath: "productsApi",
+  baseQuery: fetchBaseQuery({ baseUrl: "/api/v1" }),
+  endpoints: (builder) => ({
+    getProducts: builder.query({
+      query: (params) => ({
+        url: "/products",
+        params: {
+          page: params?.page,
+          keyword: params?.keyword,
+        },
+      }),
+    }),
+    getProductDetails: builder.query({
+      query: (id) => `/products/${id}`,
+    }),
+  }),
+});
+
+export const { useGetProductsQuery, useGetProductDetailsQuery } = productsApi;
+
+```
+
+- Go to frontend/src/components/layout/Header.jsx file & update this code :
+
+```
+import Search from "./Search";
+
+const Header = () => {
+  return (
+    <nav className="navbar row">
+      <div className="col-12 col-md-3 ps-5">
+        <div className="navbar-brand">
+          <a href="/">
+            <img src="../images/shopit_logo.png" alt="ShopIT Logo" />
+          </a>
+        </div>
+      </div>
+      <div className="col-12 col-md-6 mt-2 mt-md-0">
+        <Search />
+      </div>
+      <div class="col-12 col-md-3 mt-4 mt-md-0 text-center">
+        <a href="/cart" style={{ textDecoration: "none" }}>
+          <span id="cart" class="ms-3">
+            {" "}
+            Cart{" "}
+          </span>
+          <span className="ms-1" id="cart_count">
+            0
+          </span>
+        </a>
+
+        <div className="ms-4 dropdown">
+          <button
+            className="btn dropdown-toggle text-white"
+            type="button"
+            id="dropDownMenuButton"
+            data-bs-toggle="dropdown"
+            aria-expanded="false"
+          >
+            <figure className="avatar avatar-nav">
+              <img
+                src="../images/default_avatar.jpg"
+                alt="User Avatar"
+                className="rounded-circle"
+              />
+            </figure>
+            <span>User</span>
+          </button>
+          <div
+            className="dropdown-menu w-100"
+            aria-labelledby="dropDownMenuButton"
+          >
+            <a className="dropdown-item" href="/admin/dashboard">
+              {" "}
+              Dashboard{" "}
+            </a>
+
+            <a className="dropdown-item" href="/me/orders">
+              {" "}
+              Orders{" "}
+            </a>
+
+            <a className="dropdown-item" href="/me/profile">
+              {" "}
+              Profile{" "}
+            </a>
+
+            <a className="dropdown-item text-danger" href="/">
+              {" "}
+              Logout{" "}
+            </a>
+          </div>
+        </div>
+
+        <a href="/login" className="btn ms-4" id="login_btn">
+          {" "}
+          Login{" "}
+        </a>
+      </div>
+    </nav>
+  );
+};
+
+export default Header;
+
+```
