@@ -2237,3 +2237,297 @@ export const productsApi = createApi({
 export const { useGetProductsQuery, useGetProductDetailsQuery } = productsApi;
 
 ```
+
+#### Filter By Rating
+
+- Go to frontend/src/ folder then create new folder `constants` after that create new file `constants.js` & add this code :
+
+```
+export const PRODUCT_CATEGORY = [
+  "Electronics",
+  "Cameras",
+  "Laptops",
+  "Accessories",
+  "Headphones",
+  "Food",
+  "Books",
+  "Sports",
+  "Outdoor",
+  "Home",
+];
+
+```
+
+- go to frontend/src/components/layout/Filters.jsx add this code :
+
+```
+import { useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { getPriceQueryParams } from "../../helpers/helpers";
+import { PRODUCT_CATEGORY } from "../../constants/constants";
+import { StarRatings } from "react-star-ratings";
+
+function Filters() {
+  const [min, setMin] = useState(0);
+  const [max, setMax] = useState(0);
+
+  const navigate = useNavigate();
+
+  let [searchParams] = useSearchParams();
+
+  useEffect(() => {
+    searchParams.has("min") && setMin(searchParams.get("min"));
+    searchParams.has("max") && setMax(searchParams.get("max"));
+  }, [searchParams]);
+
+  // Handle Category & Ratings Filter
+
+  const handleClick = (checkbox) => {
+    const checkboxes = document.getElementsByName(checkbox.name);
+
+    checkboxes.forEach((item) => {
+      if (item !== checkbox) item.checked = false;
+    });
+    if (checkbox.checked === false) {
+      // Delete the query param if the checkbox is unchecked
+      if (searchParams.has(checkbox.name)) {
+        searchParams.delete(checkbox.name);
+        const path = window.location.pathname + "?" + searchParams.toString();
+        navigate(path);
+      }
+    } else {
+      // set new filter value if already there
+      if (searchParams.has(checkbox.name)) {
+        searchParams.set(checkbox.name, checkbox.value);
+      } else {
+        // append new filter value
+        searchParams.append(checkbox.name, checkbox.value);
+      }
+      const path = window.location.pathname + "?" + searchParams.toString();
+      navigate(path);
+    }
+  };
+
+  // Handle Price Filter
+  const handleButtonClick = (e) => {
+    e.preventDefault();
+
+    searchParams = getPriceQueryParams(searchParams, "min", min);
+    searchParams = getPriceQueryParams(searchParams, "max", max);
+
+    const path = window.location.pathname + "?" + searchParams.toString();
+    navigate(path);
+  };
+
+  const defaultCheckHandler = (checkboxType, checkboxValue) => {
+    const value = searchParams.get(checkboxType);
+    if (value === checkboxValue) {
+      return true;
+    } else {
+      return false;
+    }
+  };
+
+  return (
+    <div className="border p-3 filter">
+      <h3>Filters</h3>
+      <hr />
+      <h5 className="filter-heading mb-3">Price</h5>
+      <form id="filter_form" className="px-2" onSubmit={handleButtonClick}>
+        <div className="row">
+          <div className="col">
+            <input
+              type="text"
+              className="form-control"
+              placeholder="Min ($)"
+              name="min"
+              value={min}
+              onChange={(e) => setMin(e.target.value)}
+            />
+          </div>
+          <div className="col">
+            <input
+              type="text"
+              className="form-control"
+              placeholder="Max ($)"
+              name="max"
+              value={max}
+              onChange={(e) => setMax(e.target.value)}
+            />
+          </div>
+          <div className="col">
+            <button type="submit" className="btn btn-primary">
+              GO
+            </button>
+          </div>
+        </div>
+      </form>
+      <hr />
+      <h5 className="mb-3">Category</h5>
+
+      {PRODUCT_CATEGORY?.map((category) => (
+        <div className="form-check">
+          <input
+            className="form-check-input"
+            type="checkbox"
+            name="category"
+            id={`check-${category}`}
+            value={category}
+            defaultChecked={defaultCheckHandler("category", category)}
+            onClick={(e) => handleClick(e.target)}
+          />
+          <label className="form-check-label" for="check4">
+            {" "}
+            {category}
+          </label>
+        </div>
+      ))}
+
+      <hr />
+      <h5 className="mb-3">Ratings</h5>
+
+      {[5, 4, 3, 2, 1].map((rating) => (
+        <div className="form-check">
+          <input
+            className="form-check-input"
+            type="checkbox"
+            name="ratings"
+            id="check7"
+            value={rating}
+            defaultChecked={defaultCheckHandler("ratings", rating.toString())}
+            onClick={(e) => handleClick(e.target)}
+          />
+          <label className="form-check-label" for="check7">
+            \
+            <StarRatings
+              rating={rating}
+              starRatedColor="rgb(20, 20, 20)"
+              numberOfStars={5}
+              name="rating"
+              starDimension="21px"
+              starSpacing="3px"
+            />
+          </label>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export default Filters;
+
+```
+
+- Go to frontend/src/components/Home.jsx & update the code :
+
+```
+import { useEffect } from "react";
+import MetaData from "./layout/metaData";
+import { useGetProductsQuery } from "../redux/api/productsApi";
+import ProductItem from "./product/productItem.jsx";
+import Loader from "./layout/Loader.jsx";
+import toast from "react-hot-toast";
+import CustomPagination from "./layout/CostomPaginaton.jsx";
+import Filters from "./layout/Filters.jsx";
+
+export const Home = () => {
+  // eslint-disable-next-line no-undef
+  let [searchParams] = useSearchParams();
+  const page = searchParams.get("page") || 1;
+  const keyword = searchParams.get("keyword") || "";
+  const min = searchParams.get("min") || "";
+  const max = searchParams.get("max") || "";
+  const category = searchParams.get("category");
+  const ratings = searchParams.get("ratings");
+
+  const params = { page, keyword, min, max };
+
+  min !== null && (params.min = min);
+  max !== null && (params.max = max);
+  category !== null && (params.category = category);
+  ratings !== null && (params.ratings = ratings);
+
+  const { data, isLoading, error, isError } = useGetProductsQuery(params);
+
+  useEffect(() => {
+    if (isError) {
+      toast.error(error?.data?.message);
+    }
+  }, [isError, error]);
+
+  const columnSize = keyword ? 4 : 3;
+
+  if (isLoading) return <Loader />;
+
+  return (
+    <>
+      <MetaData title={"Buy Best Products Online"} />
+      <div class="row">
+        {keyword && (
+          <div className="col-6 col-md-3 mt-5">
+            <Filters />
+          </div>
+        )}
+        <div
+          className={
+            keyword ? "col-12 col-sm-6 col-md-9" : "col-12 col-sm-6 col-md-12"
+          }
+        >
+          <h1 id="products_heading" class="text-secondary">
+            {keyword
+              ? `${data?.products?.length} Products found with ${keyword}`
+              : "Latest Products"}
+          </h1>
+
+          <section id="products" class="mt-5">
+            <div className="row">
+              {data?.products?.map((product) => (
+                <ProductItem product={product} columnSize={columnSize} />
+              ))}
+            </div>
+          </section>
+
+          <CustomPagination
+            resPerPage={data?.resPerPage}
+            filteredProductsCount={data?.filteredProductsCount}
+          />
+        </div>
+      </div>
+    </>
+  );
+};
+export default Home;
+
+```
+
+- Go to frontend/src/redux/api/productsApi.js & update the code :
+
+```
+import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+
+export const productsApi = createApi({
+  reducerPath: "productsApi",
+  baseQuery: fetchBaseQuery({ baseUrl: "/api/v1" }),
+  endpoints: (builder) => ({
+    getProducts: builder.query({
+      query: (params) => ({
+        url: "/products",
+        params: {
+          page: params?.page,
+          keyword: params?.keyword,
+          category: params?.category,
+          "price[gte]": params?.min,
+          "price[lte]": params?.max,
+          "ratings[gte]": params?.ratings,
+        },
+      }),
+    }),
+    getProductDetails: builder.query({
+      query: (id) => `/products/${id}`,
+    }),
+  }),
+});
+
+export const { useGetProductsQuery, useGetProductDetailsQuery } = productsApi;
+
+```

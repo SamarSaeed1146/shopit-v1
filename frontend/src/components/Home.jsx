@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import MetaData from "./layout/metaData";
 import { useGetProductsQuery } from "../redux/api/productsApi";
 import ProductItem from "./product/productItem.jsx";
@@ -14,11 +14,15 @@ export const Home = () => {
   const keyword = searchParams.get("keyword") || "";
   const min = searchParams.get("min") || "";
   const max = searchParams.get("max") || "";
+  const category = searchParams.get("category");
+  const ratings = searchParams.get("ratings");
 
   const params = { page, keyword, min, max };
 
   min !== null && (params.min = min);
   max !== null && (params.max = max);
+  category !== null && (params.category = category);
+  ratings !== null && (params.ratings = ratings);
 
   const { data, isLoading, error, isError } = useGetProductsQuery(params);
 
