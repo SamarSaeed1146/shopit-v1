@@ -2531,3 +2531,177 @@ export const productsApi = createApi({
 export const { useGetProductsQuery, useGetProductDetailsQuery } = productsApi;
 
 ```
+
+## Authentication Frontend
+
+#### Login User
+
+- Go to frontend/src/components folder then create new folder `auth`
+- After that then create new file in auth/Login.jsx & add this code :
+
+```
+import { useEffect, useState } from "react";
+import { useLoginMutation } from "../../redux/api/authApi";
+import toast from "react-hot-toast";
+
+function Login() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const [login, { isLoading, error, isError }] = useLoginMutation();
+
+  useEffect(() => {
+    if (isError) {
+      toast.error(error?.data?.message || "Login failed");
+    }
+  }, [isError, error]);
+
+  const submitHandler = (e) => {
+    e.preventDefault();
+    const loginData = {
+      email,
+      password,
+    };
+    login(loginData);
+  };
+
+  return (
+    <div className="row wrapper">
+      <div className="col-10 col-lg-5">
+        <form className="shadow rounded bg-body" onSubmit={submitHandler}>
+          <h2 className="mb-4">Login</h2>
+          <div className="mb-3">
+            <label htmlFor="email_field" className="form-label">
+              Email
+            </label>
+            <input
+              type="email"
+              id="email_field"
+              className="form-control"
+              name="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
+
+          <div className="mb-3">
+            <label htmlFor="password_field" className="form-label">
+              Password
+            </label>
+            <input
+              type="password"
+              id="password_field"
+              className="form-control"
+              name="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </div>
+
+          <a href="/password/forgot" className="float-end mb-4">
+            Forgot Password?
+          </a>
+
+          <button
+            id="login_button"
+            type="submit"
+            className="btn w-100 py-2"
+            disabled={isLoading}
+          >
+            {isLoading ? "Authenticating..." : "LOGIN"}
+          </button>
+
+          <div className="my-3">
+            <a href="/register" className="float-end">
+              New User?
+            </a>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+export default Login;
+
+```
+
+- Go to `frontend/src/redux/api` create new file `authApi.js` & add code :
+
+```
+import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+
+export const authApi = createApi({
+  reducerPath: "authApi",
+  baseQuery: fetchBaseQuery({ baseUrl: "/api/v1" }),
+  endpoints: (builder) => ({
+    login: builder.mutation({
+      query: (body) => {
+        return {
+          url: "/login",
+          method: "POST",
+          body,
+        };
+      },
+    }),
+  }),
+});
+
+export const { useLoginMutation } = authApi;
+
+```
+
+Go to `frontend/src/redux/store.js` file & update the code :
+
+```
+import { configureStore } from "@reduxjs/toolkit";
+import { productsApi } from "./api/productsApi";
+import { authApi } from "./api/authApi";
+
+export const store = configureStore({
+  reducer: {
+    [productsApi.reducerPath]: productsApi.reducer,
+    [authApi.reducerPath]: authApi.reducer,
+  },
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware().concat(productsApi.middleware, authApi.middleware),
+});
+
+```
+
+- Go to `frontend/src/App.js` file then update the code :
+
+```
+import "./App.css";
+
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+
+import Home from "./components/Home";
+import Footer from "./components/layout/Footer";
+import Header from "./components/layout/Header";
+import { Toaster } from "react-hot-toast";
+import ProductDetails from "./components/product/productDetails";
+import Login from "./components/auth/Login";
+
+function App() {
+  return (
+    <Router>
+      <div className="App">
+        <Toaster position="top-center" />
+        <Header />
+        <div className="container">
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/product/:id" element={<ProductDetails />} />
+            <Route path="/login" element={<Login />} />
+          </Routes>
+        </div>
+        <Footer />
+      </div>
+    </Router>
+  );
+}
+
+export default App;
+
+```
