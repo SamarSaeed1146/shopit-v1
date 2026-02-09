@@ -1827,3 +1827,377 @@ router
 export default router;
 
 ```
+
+#### User State
+
+- Go to frontend/src/components/auth folder then create new file `Register.jsx` file & add the code
+
+```
+import { useEffect, useState } from "react";
+import { useRegisterMutation } from "../../redux/api/authApi";
+import { toast } from "react-hot-toast";
+
+function Register() {
+  const [user, setUser] = useState({
+    name: "",
+    email: "",
+    password: "",
+  });
+
+  const { name, email, password } = user;
+
+  const [register, { isLoading, error }] = useRegisterMutation();
+
+  useEffect(() => {
+    if (error) {
+      toast.error(error?.data?.message);
+    }
+  }, [error]);
+
+  const submitHandler = (e) => {
+    e.preventDefault();
+
+    const signUpData = {
+      name,
+      email,
+      password,
+    };
+
+    register(signUpData);
+  };
+
+  const onChange = (e) => {
+    setUser({ ...user, [e.target.name]: e.target.value });
+  };
+
+  return (
+    <div className="row wrapper">
+      <div className="col-10 col-lg-5">
+        <form className="shadow rounded bg-body" onSubmit={submitHandler}>
+          <h2 className="mb-4">Register</h2>
+
+          <div className="mb-3">
+            <label htmlFor="name_field" className="form-label">
+              Name
+            </label>
+            <input
+              type="text"
+              id="name_field"
+              className="form-control"
+              name="name"
+              value={name}
+              onChange={onChange}
+            />
+          </div>
+
+          <div className="mb-3">
+            <label htmlFor="email_field" className="form-label">
+              Email
+            </label>
+            <input
+              type="email"
+              id="email_field"
+              className="form-control"
+              name="email"
+              value={email}
+              onChange={onChange}
+            />
+          </div>
+
+          <div className="mb-3">
+            <label for="password_field" className="form-label">
+              Password
+            </label>
+            <input
+              type="password"
+              id="password_field"
+              className="form-control"
+              name="password"
+              value={password}
+              onChange={onChange}
+            />
+          </div>
+
+          <button
+            id="register_button"
+            type="submit"
+            className="btn w-100 py-2"
+            disabled={isLoading}
+          >
+            {isLoading ? "Registering..." : "REGISTER"} REGISTER
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+export default Register;
+
+```
+
+- Go to frontend/src/redux/api folder then create new file `userApi.js` & Add this code :
+
+```
+import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { setIsAuthenticated, setUser } from "../features/userSlice";
+
+export const userApi = createApi({
+  reducerPath: "userApi",
+  baseQuery: fetchBaseQuery({ baseUrl: "/api/v1" }),
+  endpoints: (builder) => ({
+    getMe: builder.query({
+      query: () => `/me`,
+      transformResponse: (result) => result.user,
+      async onQueryStarted(arg, { queryFulfilled, dispatch }) {
+        try {
+          const { data } = await queryFulfilled;
+          dispatch(setUser(data));
+          dispatch(setIsAuthenticated(true));
+        } catch (error) {
+          console.log(error);
+        }
+      },
+    }),
+  }),
+});
+
+export const { useGetMeQuery } = userApi;
+
+```
+
+- Go to frontend/src/redux & create new folder `features` then create new file `userSlice.js` & add this code :
+
+```
+import { createSlice } from "@reduxjs/toolkit";
+
+const initialState = {
+  user: null,
+  isAuthenticated: false,
+};
+
+export const userSlice = createSlice({
+  initialState,
+  name: "userSlice",
+  reducers: {
+    setUser: (state, action) => {
+      state.user = action.payload;
+    },
+    setIsAuthenticated: (state, action) => {
+      state.isAuthenticated = action.payload;
+    },
+  },
+});
+
+export default userSlice.reducer;
+export const { setUser, setIsAuthenticated } = userSlice.actions;
+
+```
+
+- Go to frontend/src/components/layout/Header.jsx file & update the code :
+
+```
+import { useSelector } from "react-redux";
+import { useGetMeQuery } from "../../redux/api/userApi";
+import Search from "./Search";
+import { Link } from "react-router-dom";
+
+const Header = () => {
+  const { isLoading } = useGetMeQuery();
+
+  const { user } = useSelector((state) => state.auth);
+
+  return (
+    <nav className="navbar row">
+      <div className="col-12 col-md-3 ps-5">
+        <div className="navbar-brand">
+          <a href="/">
+            <img src="../images/shopit_logo.png" alt="ShopIT Logo" />
+          </a>
+        </div>
+      </div>
+      <div className="col-12 col-md-6 mt-2 mt-md-0">
+        <Search />
+      </div>
+      <div class="col-12 col-md-3 mt-4 mt-md-0 text-center">
+        <a href="/cart" style={{ textDecoration: "none" }}>
+          <span id="cart" class="ms-3">
+            {" "}
+            Cart{" "}
+          </span>
+          <span className="ms-1" id="cart_count">
+            0
+          </span>
+        </a>
+
+        {user ? (
+          <div className="ms-4 dropdown">
+            <button
+              className="btn dropdown-toggle text-white"
+              type="button"
+              id="dropDownMenuButton"
+              data-bs-toggle="dropdown"
+              aria-expanded="false"
+            >
+              <figure className="avatar avatar-nav">
+                <img
+                  src={
+                    user?.avatar
+                      ? user?.avatar?.url
+                      : "../images/default_avatar.jpg"
+                  }
+                  alt="User Avatar"
+                  className="rounded-circle"
+                />
+              </figure>
+              <span>{user?.name}</span>
+            </button>
+            <div
+              className="dropdown-menu w-100"
+              aria-labelledby="dropDownMenuButton"
+            >
+              <Link className="dropdown-item" to="/admin/dashboard">
+                {" "}
+                Dashboard{" "}
+              </Link>
+
+              <Link className="dropdown-item" to="/me/orders">
+                {" "}
+                Orders{" "}
+              </Link>
+
+              <Link className="dropdown-item" to="/me/profile">
+                {" "}
+                Profile{" "}
+              </Link>
+
+              <Link className="dropdown-item text-danger" to="/">
+                {" "}
+                Logout{" "}
+              </Link>
+            </div>
+          </div>
+        ) : (
+          !isLoading && (
+            <Link to="/login" className="btn ms-4" id="login_btn">
+              {" "}
+              Login{" "}
+            </Link>
+          )
+        )}
+      </div>
+    </nav>
+  );
+};
+
+export default Header;
+
+```
+
+- Go to frontend/src/redux/store.js file & update the code :
+
+```
+import { configureStore } from "@reduxjs/toolkit";
+import { productsApi } from "./api/productsApi";
+import { authApi } from "./api/authApi";
+import { userApi } from "./api/userApi";
+import { useReducer } from "./features/userSlice";
+
+export const store = configureStore({
+  reducer: {
+    auth: useReducer,
+    [productsApi.reducerPath]: productsApi.reducer,
+    [authApi.reducerPath]: authApi.reducer,
+    [userApi.reducerPath]: userApi.reducer,
+  },
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware().concat(
+      productsApi.middleware,
+      authApi.middleware,
+      userApi.middleware,
+    ),
+});
+
+```
+
+- Go to frontend/src/App.js file then update the code :
+
+```
+import "./App.css";
+
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+
+import Home from "./components/Home";
+import Footer from "./components/layout/Footer";
+import Header from "./components/layout/Header";
+import { Toaster } from "react-hot-toast";
+import ProductDetails from "./components/product/productDetails";
+import Login from "./components/auth/Login";
+import Register from "./components/auth/Register";
+
+function App() {
+  return (
+    <Router>
+      <div className="App">
+        <Toaster position="top-center" />
+        <Header />
+        <div className="container">
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/product/:id" element={<ProductDetails />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+          </Routes>
+        </div>
+        <Footer />
+      </div>
+    </Router>
+  );
+}
+
+export default App;
+
+```
+
+- Go to frontend/src/redux/api/authApi.js file then update the code :
+
+```
+import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { userApi } from "./userApi";
+
+export const authApi = createApi({
+  reducerPath: "authApi",
+  baseQuery: fetchBaseQuery({ baseUrl: "/api/v1" }),
+  endpoints: (builder) => ({
+    register: builder.mutation({
+      query: (body) => {
+        return {
+          url: "/register",
+          method: "POST",
+          body,
+        };
+      },
+    }),
+    login: builder.mutation({
+      query: (body) => {
+        return {
+          url: "/login",
+          method: "POST",
+          body,
+        };
+      },
+      async onQueryStarted(arg, { queryFulfilled, dispatch }) {
+        try {
+          await queryFulfilled;
+          await dispatch(userApi.endpoints.getMe.initiate(null));
+        } catch (error) {
+          console.log(error);
+        }
+      },
+    }),
+  }),
+});
+
+export const { useLoginMutation, useRegisterMutation } = authApi;
+
+```
