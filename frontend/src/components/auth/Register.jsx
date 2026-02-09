@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useRegisterMutation } from "../../redux/api/authApi";
 import { toast } from "react-hot-toast";
 import { useSelector } from "react-redux";
-import { Navigate, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 function Register() {
   const [user, setUser] = useState({

@@ -2705,3 +2705,383 @@ function App() {
 export default App;
 
 ```
+
+#### Logout User
+
+- Go to Frontend/src/redux/api/authApi.js file & update the code :
+
+```
+import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { userApi } from "./userApi";
+
+export const authApi = createApi({
+  reducerPath: "authApi",
+  baseQuery: fetchBaseQuery({ baseUrl: "/api/v1" }),
+  endpoints: (builder) => ({
+    register: builder.mutation({
+      query: (body) => {
+        return {
+          url: "/register",
+          method: "POST",
+          body,
+        };
+      },
+    }),
+    login: builder.mutation({
+      query: (body) => {
+        return {
+          url: "/login",
+          method: "POST",
+          body,
+        };
+      },
+      async onQueryStarted(arg, { queryFulfilled, dispatch }) {
+        try {
+          await queryFulfilled;
+          await dispatch(userApi.endpoints.getMe.initiate(null));
+        } catch (error) {
+          console.log(error);
+        }
+      },
+    }),
+    logout: builder.mutation({
+      query: () => {
+        return {
+          url: "/logout",
+          method: "POST",
+        };
+      },
+    }),
+  }),
+});
+
+export const { useLoginMutation, useRegisterMutation, useLogoutMutation } = authApi;
+
+
+```
+
+- Go to frontend/src/components/layout/Header.jsx file & update the code :
+
+```
+import { useSelector } from "react-redux";
+import { useGetMeQuery } from "../../redux/api/userApi";
+import Search from "./Search";
+import { Link, useNavigate } from "react-router-dom";
+import { useLogoutMutation } from "../../redux/api/authApi";
+
+const Header = () => {
+  const navigate = useNavigate();
+
+  const { isLoading } = useGetMeQuery();
+  const [logout] = useLogoutMutation;
+
+  const { user } = useSelector((state) => state.auth);
+
+  const logoutHandler = async () => {
+    logout();
+    navigate(0);
+  };
+
+  return (
+    <nav className="navbar row">
+      <div className="col-12 col-md-3 ps-5">
+        <div className="navbar-brand">
+          <a href="/">
+            <img src="../images/shopit_logo.png" alt="ShopIT Logo" />
+          </a>
+        </div>
+      </div>
+      <div className="col-12 col-md-6 mt-2 mt-md-0">
+        <Search />
+      </div>
+      <div class="col-12 col-md-3 mt-4 mt-md-0 text-center">
+        <a href="/cart" style={{ textDecoration: "none" }}>
+          <span id="cart" class="ms-3">
+            {" "}
+            Cart{" "}
+          </span>
+          <span className="ms-1" id="cart_count">
+            0
+          </span>
+        </a>
+
+        {user ? (
+          <div className="ms-4 dropdown">
+            <button
+              className="btn dropdown-toggle text-white"
+              type="button"
+              id="dropDownMenuButton"
+              data-bs-toggle="dropdown"
+              aria-expanded="false"
+            >
+              <figure className="avatar avatar-nav">
+                <img
+                  src={
+                    user?.avatar
+                      ? user?.avatar?.url
+                      : "../images/default_avatar.jpg"
+                  }
+                  alt="User Avatar"
+                  className="rounded-circle"
+                />
+              </figure>
+              <span>{user?.name}</span>
+            </button>
+            <div
+              className="dropdown-menu w-100"
+              aria-labelledby="dropDownMenuButton"
+            >
+              <Link className="dropdown-item" to="/admin/dashboard">
+                {" "}
+                Dashboard{" "}
+              </Link>
+
+              <Link className="dropdown-item" to="/me/orders">
+                {" "}
+                Orders{" "}
+              </Link>
+
+              <Link className="dropdown-item" to="/me/profile">
+                {" "}
+                Profile{" "}
+              </Link>
+
+              <Link
+                className="dropdown-item text-danger"
+                to="/"
+                onClick={logoutHandler}
+              >
+                Logout{" "}
+              </Link>
+            </div>
+          </div>
+        ) : (
+          !isLoading && (
+            <Link to="/login" className="btn ms-4" id="login_btn">
+              {" "}
+              Login{" "}
+            </Link>
+          )
+        )}
+      </div>
+    </nav>
+  );
+};
+
+export default Header;
+
+```
+
+- Go to frontend/src/components/auth/Login.jsx & update the code :
+
+```
+import { useEffect, useState } from "react";
+import { useLoginMutation } from "../../redux/api/authApi";
+import toast from "react-hot-toast";
+import { useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
+
+function Login() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const navigate = useNavigate();
+
+  const [login, { isLoading, error, isError }] = useLoginMutation();
+  const { isAuthenticated } = useSelector((state) => state.auth);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate("/");
+    }
+
+    if (isError) {
+      toast.error(error?.data?.message || "Login failed");
+    }
+  }, [error, isAuthenticated, isError, navigate]);
+
+  const submitHandler = (e) => {
+    e.preventDefault();
+    const loginData = {
+      email,
+      password,
+    };
+    login(loginData);
+  };
+
+  return (
+    <div className="row wrapper">
+      <div className="col-10 col-lg-5">
+        <form className="shadow rounded bg-body" onSubmit={submitHandler}>
+          <h2 className="mb-4">Login</h2>
+          <div className="mb-3">
+            <label htmlFor="email_field" className="form-label">
+              Email
+            </label>
+            <input
+              type="email"
+              id="email_field"
+              className="form-control"
+              name="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
+
+          <div className="mb-3">
+            <label htmlFor="password_field" className="form-label">
+              Password
+            </label>
+            <input
+              type="password"
+              id="password_field"
+              className="form-control"
+              name="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </div>
+
+          <a href="/password/forgot" className="float-end mb-4">
+            Forgot Password?
+          </a>
+
+          <button
+            id="login_button"
+            type="submit"
+            className="btn w-100 py-2"
+            disabled={isLoading}
+          >
+            {isLoading ? "Authenticating..." : "LOGIN"}
+          </button>
+
+          <div className="my-3">
+            <a href="/register" className="float-end">
+              New User?
+            </a>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+export default Login;
+
+```
+
+- Go to frontend/src/components/auth/Register.jsx file & update the code :
+
+```
+import { useEffect, useState } from "react";
+import { useRegisterMutation } from "../../redux/api/authApi";
+import { toast } from "react-hot-toast";
+import { useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
+
+function Register() {
+  const [user, setUser] = useState({
+    name: "",
+    email: "",
+    password: "",
+  });
+
+  const { name, email, password } = user;
+
+  const Navigate = useNavigate();
+
+  const [register, { isLoading, error }] = useRegisterMutation();
+
+  const { isAuthenticated } = useSelector((state) => state.auth);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      Navigate("/");
+    }
+
+    if (error) {
+      toast.error(error?.data?.message || "Registration failed");
+    }
+  }, [Navigate, error, isAuthenticated]);
+
+  const submitHandler = (e) => {
+    e.preventDefault();
+
+    const signUpData = {
+      name,
+      email,
+      password,
+    };
+
+    register(signUpData);
+  };
+
+  const onChange = (e) => {
+    setUser({ ...user, [e.target.name]: e.target.value });
+  };
+
+  return (
+    <div className="row wrapper">
+      <div className="col-10 col-lg-5">
+        <form className="shadow rounded bg-body" onSubmit={submitHandler}>
+          <h2 className="mb-4">Register</h2>
+
+          <div className="mb-3">
+            <label htmlFor="name_field" className="form-label">
+              Name
+            </label>
+            <input
+              type="text"
+              id="name_field"
+              className="form-control"
+              name="name"
+              value={name}
+              onChange={onChange}
+            />
+          </div>
+
+          <div className="mb-3">
+            <label htmlFor="email_field" className="form-label">
+              Email
+            </label>
+            <input
+              type="email"
+              id="email_field"
+              className="form-control"
+              name="email"
+              value={email}
+              onChange={onChange}
+            />
+          </div>
+
+          <div className="mb-3">
+            <label for="password_field" className="form-label">
+              Password
+            </label>
+            <input
+              type="password"
+              id="password_field"
+              className="form-control"
+              name="password"
+              value={password}
+              onChange={onChange}
+            />
+          </div>
+
+          <button
+            id="register_button"
+            type="submit"
+            className="btn w-100 py-2"
+            disabled={isLoading}
+          >
+            {isLoading ? "Registering..." : "REGISTER"} REGISTER
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+export default Register;
+
+```
