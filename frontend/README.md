@@ -3085,3 +3085,176 @@ function Register() {
 export default Register;
 
 ```
+
+## Handle User, Protected Route, Forgot & Reset Password
+
+#### User Layout & Show User Profile
+
+- go to `frontend/src/components/layout` folders then create new file `UserLayout.jsx` & add this code :
+
+```
+import SideMenu from "./SideMenu";
+
+function UserLayout({ Children }) {
+  return (
+    <div>
+      <div className="mt-2 mb-2 py-4">
+        <h2 className="text-center fw-bolder"> User Settings</h2>
+      </div>
+      <div className="container">
+        <div className="row justify-content-around">
+          <div className="col-12 col-lg-3">
+            <SideMenu />
+          </div>
+          <div className="col-12 col-lg-8 user-dashboard">{Children}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default UserLayout;
+
+```
+
+- Go to `Frontend/src/components/layout` folder then create new file `SideMenu.jsx` & add this code :
+
+```
+import React, { useState } from "react";
+import { Link, useLocation } from "react-router-dom";
+
+function SideMenu() {
+  const menuItems = [
+    {
+      name: "Profile",
+      url: "/me/profile",
+      icon: "fas fa-user",
+    },
+    {
+      name: "Update Profile",
+      url: "/me/update_profile",
+      icon: "fas fa-user",
+    },
+    {
+      name: "Upload Avatar",
+      url: "/me/upload_avatar",
+      icon: "fas fa-user-circle",
+    },
+    {
+      name: "Update Password",
+      url: "/me/update_password",
+      icon: "fas fa-lock",
+    },
+  ];
+
+  const Location = useLocation();
+
+  const [activeMenuItem, setActiveMenuItem] = useState(Location.pathname);
+  const handleMenuItemClick = (menuItemUrl) => {
+    setActiveMenuItem(menuItemUrl);
+  };
+
+  return (
+    <div className="list-group mt-5 pl-4">
+      {menuItems?.map((menuItem, index) => (
+        <Link
+          key={index}
+          to={menuItem.url}
+          className={`fw-bold list-group-item list-group-item-action ${activeMenuItem.includes(menuItem.url) ? "active" : ""}`}
+          onClick={() => handleMenuItemClick(menuItem.url)}
+          aria-current={
+            activeMenuItem.includes(menuItem.url) ? "true" : "false"
+          }
+        >
+          <i className={`${menuItem.icon} fa-fw pe-2`}></i> {menuItem.name}
+        </Link>
+      ))}
+    </div>
+  );
+}
+
+export default SideMenu;
+
+```
+
+- Go to `frontend/src/component` folder then create new folder `user` & create a new file `Profile.jsx` add this code :
+
+```
+import UserLayout from "../layout/UserLayout";
+import { useSelector } from "react-redux";
+
+function Profile() {
+  const { user } = useSelector((state) => state.auth);
+
+  return (
+    <UserLayout>
+      <div className="row justify-content-around mt-5 user-info">
+        <div className="col-12 col-md-3">
+          <figure className="avatar avatar-profile">
+            <img
+              className="rounded-circle img-fluid"
+              src="../images/default_avatar.jpg"
+              alt={user?.name}
+            />
+          </figure>
+        </div>
+
+        <div className="col-12 col-md-5">
+          <h4>Full Name</h4>
+          <p>{user?.name}</p>
+
+          <h4>Email Address</h4>
+          <p>{user?.email}</p>
+
+          <h4>Joined On</h4>
+          <p>{user?.createdAt?.substring(0, 10)}</p>
+        </div>
+      </div>
+    </UserLayout>
+  );
+}
+
+export default Profile;
+
+```
+
+- Go to frontend/src/App.js & update the code :
+
+```
+import "./App.css";
+
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+
+import Home from "./components/Home";
+import Footer from "./components/layout/Footer";
+import Header from "./components/layout/Header";
+import { Toaster } from "react-hot-toast";
+import ProductDetails from "./components/product/productDetails";
+import Login from "./components/auth/Login";
+import Register from "./components/auth/Register";
+import Profile from "./components/user/profile";
+
+function App() {
+  return (
+    <Router>
+      <div className="App">
+        <Toaster position="top-center" />
+        <Header />
+        <div className="container">
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/product/:id" element={<ProductDetails />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/me/profile" element={<Profile />} />
+          </Routes>
+        </div>
+        <Footer />
+      </div>
+    </Router>
+  );
+}
+
+export default App;
+
+```
