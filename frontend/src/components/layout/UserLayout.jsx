@@ -1,0 +1,21 @@
+import SideMenu from "./SideMenu";
+
+function UserLayout({ Children }) {
+  return (
+    <div>
+      <div className="mt-2 mb-2 py-4">
+        <h2 className="text-center fw-bolder"> User Settings</h2>
+      </div>
+      <div className="container">
+        <div className="row justify-content-around">
+          <div className="col-12 col-lg-3">
+            <SideMenu />
+          </div>
+          <div className="col-12 col-lg-8 user-dashboard">{Children}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default UserLayout;
