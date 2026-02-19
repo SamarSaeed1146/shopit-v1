@@ -3448,3 +3448,164 @@ function App() {
 export default App;
 
 ```
+
+#### Protected Route
+
+- Go to frontend/src/components/auth folder create a new file `ProtectedRoute.jsx` & add this code :
+
+```
+import { useSelector } from "react-redux";
+import { Navigate } from "react-router-dom";
+import Loader from "../layout/Loader";
+
+function ProtectedRoute({ children }) {
+  const { isAuthenticated, loading } = useSelector((state) => state.auth);
+
+  if (loading) return <Loader />;
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return children;
+}
+
+export default ProtectedRoute;
+
+```
+
+- Go to `frontend/src/redux/features/userSlice.js` file & update the code :
+
+```
+import { createSlice } from "@reduxjs/toolkit";
+
+const initialState = {
+  user: null,
+  isAuthenticated: false,
+  loading: true,
+};
+
+export const userSlice = createSlice({
+  initialState,
+  name: "userSlice",
+  reducers: {
+    setUser: (state, action) => {
+      state.user = action.payload;
+    },
+    setIsAuthenticated: (state, action) => {
+      state.isAuthenticated = action.payload;
+    },
+    setLoading: (state, action) => {
+      state.loading = action.payload;
+    },
+  },
+});
+
+export default userSlice.reducer;
+export const { setUser, setIsAuthenticated, setLoading } = userSlice.actions;
+
+```
+
+- Go to `frontend/src/redux/api/userApi.js` file & update the code :
+
+```
+import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { setIsAuthenticated, setLoading, setUser } from "../features/userSlice";
+
+export const userApi = createApi({
+  reducerPath: "userApi",
+  baseQuery: fetchBaseQuery({ baseUrl: "/api/v1" }),
+  tagTypes: ["User"],
+  endpoints: (builder) => ({
+    getMe: builder.query({
+      query: () => `/me`,
+      transformResponse: (result) => result.user,
+      async onQueryStarted(arg, { queryFulfilled, dispatch }) {
+        try {
+          const { data } = await queryFulfilled;
+          dispatch(setUser(data));
+          dispatch(setIsAuthenticated(true));
+          dispatch(setLoading(false));
+        } catch (error) {
+          dispatch(setLoading(false));
+          console.log(error);
+        }
+      },
+      providesTags: ["User"],
+    }),
+    updateProfile: builder.mutation({
+      query(body) {
+        return {
+          url: `/me/update`,
+          method: "PUT",
+          body,
+        };
+      },
+      invalidatesTags: ["User"],
+    }),
+  }),
+});
+
+export const { useGetMeQuery, useUpdateProfileMutation } = userApi;
+
+```
+
+- Go to `frontend/src/App.js` file & update the code :
+
+```
+import "./App.css";
+
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+
+import Home from "./components/Home";
+import Footer from "./components/layout/Footer";
+import Header from "./components/layout/Header";
+import { Toaster } from "react-hot-toast";
+import ProductDetails from "./components/product/productDetails";
+import Login from "./components/auth/Login";
+import Register from "./components/auth/Register";
+import Profile from "./components/user/profile";
+import UpdateProfile from "./components/user/UpdateProfile";
+import ProtectedRoute from "./components/auth/ProtectedRoute";
+
+function App() {
+  return (
+    <Router>
+      <div className="App">
+        <Toaster position="top-center" />
+        <Header />
+        <div className="container">
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/product/:id" element={<ProductDetails />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+
+            <Route
+              path="/me/profile"
+              element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/me/update-profile"
+              element={
+                <ProtectedRoute>
+                  <UpdateProfile />
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
+        </div>
+        <Footer />
+      </div>
+    </Router>
+  );
+}
+
+export default App;
+
+```
