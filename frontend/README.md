@@ -3258,3 +3258,193 @@ function App() {
 export default App;
 
 ```
+
+#### Update User Profile
+
+- Go to Frontend/src/components/user folder then create new file `UpdateProfile.jsx` & Add this code :
+
+```
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useUpdateProfileMutation } from "../../redux/api/userApi";
+import { useSelector } from "react-redux";
+import { toast } from "react-toastify";
+import UserLayout from "../layout/UserLayout";
+
+function UpdateProfile() {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+
+  const navigate = useNavigate();
+
+  const [updateProfile, { isLoading, error, isSuccess }] =
+    useUpdateProfileMutation();
+
+  const { user } = useSelector((state) => state.auth);
+
+  useEffect(() => {
+    if (user) {
+      setName(user?.name);
+      setEmail(user?.email);
+    }
+
+    if (error) {
+      toast.error(error?.data?.message);
+    }
+
+    if (isSuccess) {
+      toast.success("Profile updated successfully");
+      navigate("/me/profile");
+    }
+  }, [user, error, isSuccess, navigate]);
+
+  const submitHandler = (e) => {
+    e.preventDefault();
+
+    const userData = {
+      email,
+      name,
+    };
+
+    updateProfile(userData);
+  };
+
+  return (
+    <UserLayout>
+      <div className="row wrapper">
+        <div className="col-10 col-lg-8">
+          <form className="shadow rounded bg-body" onSubmit={submitHandler}>
+            <h2 className="mb-4">Update Profile</h2>
+
+            <div className="mb-3">
+              <label htmlFor="name_field" className="form-label">
+                {" "}
+                Name{" "}
+              </label>
+              <input
+                type="text"
+                id="name_field"
+                className="form-control"
+                name="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+            </div>
+
+            <div className="mb-3">
+              <label htmlFor="email_field" className="form-label">
+                {" "}
+                Email{" "}
+              </label>
+              <input
+                type="email"
+                id="email_field"
+                className="form-control"
+                name="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </div>
+
+            <button
+              type="submit"
+              className="btn update-btn w-100"
+              disabled={isLoading}
+            >
+              {isLoading ? "Updating..." : "Update"}
+            </button>
+          </form>
+        </div>
+      </div>
+    </UserLayout>
+  );
+}
+
+export default UpdateProfile;
+
+```
+
+- Go to `frontend/src/redux/api/userApi.js` file & Update the code :
+
+```
+import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { setIsAuthenticated, setUser } from "../features/userSlice";
+
+export const userApi = createApi({
+  reducerPath: "userApi",
+  baseQuery: fetchBaseQuery({ baseUrl: "/api/v1" }),
+  tagTypes: ["User"],
+  endpoints: (builder) => ({
+    getMe: builder.query({
+      query: () => `/me`,
+      transformResponse: (result) => result.user,
+      async onQueryStarted(arg, { queryFulfilled, dispatch }) {
+        try {
+          const { data } = await queryFulfilled;
+          dispatch(setUser(data));
+          dispatch(setIsAuthenticated(true));
+        } catch (error) {
+          console.log(error);
+        }
+      },
+      providesTags: ["User"],
+    }),
+    updateProfile: builder.mutation({
+      query(body) {
+        return {
+          url: `/me/update`,
+          method: "PUT",
+          body,
+        };
+      },
+      invalidatesTags: ["User"],
+    }),
+  }),
+});
+
+export const { useGetMeQuery, useUpdateProfileMutation } = userApi;
+
+```
+
+- Go to `frontend/src/App.js` file & update the code :
+
+```
+import "./App.css";
+
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+
+import Home from "./components/Home";
+import Footer from "./components/layout/Footer";
+import Header from "./components/layout/Header";
+import { Toaster } from "react-hot-toast";
+import ProductDetails from "./components/product/productDetails";
+import Login from "./components/auth/Login";
+import Register from "./components/auth/Register";
+import Profile from "./components/user/profile";
+import UpdateProfile from "./components/user/UpdateProfile";
+
+function App() {
+  return (
+    <Router>
+      <div className="App">
+        <Toaster position="top-center" />
+        <Header />
+        <div className="container">
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/product/:id" element={<ProductDetails />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/me/profile" element={<Profile />} />
+            <Route path="/me/update-profile" element={<UpdateProfile />} />
+          </Routes>
+        </div>
+        <Footer />
+      </div>
+    </Router>
+  );
+}
+
+export default App;
+
+```

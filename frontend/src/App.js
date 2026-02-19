@@ -10,6 +10,7 @@ import ProductDetails from "./components/product/productDetails";
 import Login from "./components/auth/Login";
 import Register from "./components/auth/Register";
 import Profile from "./components/user/profile";
+import UpdateProfile from "./components/user/UpdateProfile";
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/me/profile" element={<Profile />} />
+            <Route path="/me/update-profile" element={<UpdateProfile />} />
           </Routes>
         </div>
         <Footer />
