@@ -1,6 +1,6 @@
-## Server Running Port & Starting Structure
+# Server Running Port & Starting Structure
 
-#### step # 1:
+## step # 1
 
 - Open vs code.
 - Make file of frontend in project.
@@ -8,23 +8,23 @@
 - Open terminal
 - Add `npm init` command it will give package.json file.
 
-#### step # 2:
+## step # 2
 
 - install : `npm i express dotenv mongoose --save`
 - --save is used for save the package in package.json file.
 
-#### step # 3:
+## step # 3
 
 - Go to backend folder and make a file of app.js
 - Add this to app.js file :
 
-```
-  import express from "express";
+```javascript
+import express from "express";
 
 const app = express();
 
 app.listen(3000, () => {
-console.log("Server is running on port 3000");
+  console.log("Server is running on port 3000");
 });
 ```
 
@@ -32,27 +32,17 @@ console.log("Server is running on port 3000");
 - Go to terminal add : cd backend
 - On terminal add : node app.js
 
-#### step # 4:
+## step # 4
 
 - Go on backend folder then make a folder of : config and then make a file of : config.env
 - Config.env add port=3000
-- Then make changes in app.js file :
+- Then make changes in app.js file
 
-```
-  import express from "express";
-
-const app = express();
-import dotenv from "dotenv";
-dotenv.config({ path: "backend/config/config.env" });
-
-app.listen(process.env.PORT, () => {
-console.log(`Server is running on port ${process.env.PORT}`);
-});
 ```
 
 - Then run : `node app.js` it will show undefine.
 
-#### step # 5:
+## step # 5
 
 - `npm i nodemon --save-dev`
 - This will install devdependences of nodemon
@@ -84,7 +74,7 @@ app.listen(process.env.PORT, () => {
 
 - Add this to config.env file `NODE_ENV=DEVELOPMENT`
 
-#### step # 6:
+#### step # 6
 
 - Make a folder of `controllers` in backend folder.
 - In controllers folder make `productControllers.js` file.
@@ -97,7 +87,7 @@ export const getProducts = async (req, res) => {
 
 ```
 
-#### step # 7:
+#### step # 7
 
 - Make a folder of `routes` in backend folder.
 - In routes folder make `products.js` file.
@@ -184,7 +174,7 @@ app.listen(process.env.PORT, () => {
 
 ## Product Schema
 
-#### step # 1:
+#### step # 1
 
 - In backend folder make a new folder : `models`
 - In `models` folder make a new file : `product.js` & add this :
@@ -349,7 +339,7 @@ app.listen(process.env.PORT, () => {
 
 ```
 
-#### step # 2:
+#### step # 2
 
 - Make a new folder in `backend`
 - `seeder` in `seeder` folder make two files : `data.js` & `seeder.js`
@@ -463,7 +453,7 @@ seedProducts();
 
 - In `package.json` file add this in `"scripts"` section : `"seeder": "node backend/seeder/seeder.js"`.
 
-#### step # 3:
+#### step # 3
 
 - Go to `productControllers.js` file & add this:
 
@@ -515,7 +505,7 @@ export const updateProduct = async (req, res) => {
 
 ```
 
-#### step # 4:
+#### step # 4
 
 - Go to `product.js` file in backend/routes/products.js & add this:
 
@@ -537,7 +527,7 @@ export default router;
 
 ```
 
-#### step # 5:
+#### step # 5
 
 - Go to `productControllers.js` file & add this:
 
@@ -625,7 +615,7 @@ export default router;
 
 ## Backend Error Handler
 
-#### step # 1:
+#### step # 1
 
 - Go on `backend` folder than create a new folder `utils`
 - In `utils` folder make a file of `errorHandler.js`
@@ -645,7 +635,7 @@ export default ErrorHandler;
 
 ```
 
-#### step # 2:
+#### step # 2
 
 - Go on `backend` folder create new folder `middlewares`
 - In `middlewares` folder create a file of `errors.js`
@@ -663,7 +653,7 @@ export default (err, req, res, next) => {
 
 ```
 
-#### step # 3:
+#### step # 3
 
 - Update `app.js` file:
 
@@ -695,7 +685,7 @@ app.listen(process.env.PORT, () => {
 
 ```
 
-#### step # 4:
+#### step # 4
 
 - Add some code error handler in `ProductControllers.js`:
 
@@ -760,7 +750,7 @@ export const deleteProduct = async (req, res) => {
 
 ```
 
-#### step # 5:
+#### step # 5
 
 - Update the `config.env` file :
 
@@ -772,7 +762,7 @@ DB_LOCAL_URI=mongodb://127.0.0.1:27017/shopit-v1
 DB_URI=mongodb://127.0.0.1:27017/shopit-v1
 ```
 
-#### step # 6:
+#### step # 6
 
 - In backend/middlewares make a new file `catchAsyncErrors.js`:
 
@@ -783,7 +773,7 @@ export default (controllerFunction) => (req, res, next) => {
 
 ```
 
-#### step # 7:
+#### step # 7
 
 - Make a changes in `productControllers.js` file:
 
@@ -849,7 +839,7 @@ export const deleteProduct = catchAsyncErrors(async (req, res) => {
 
 ```
 
-#### step # 8:
+#### step # 8
 
 - Make some change in errors.js file /backend/middlewares/errors.js :
 
@@ -888,7 +878,7 @@ export default (err, req, res, next) => {
 
 ```
 
-#### step # 9:
+#### step # 9
 
 - Make some changes in app.js file:
 
@@ -2199,5 +2189,48 @@ export const authApi = createApi({
 });
 
 export const { useLoginMutation, useRegisterMutation } = authApi;
+
+```
+
+## Setup Cloudinary
+
+- Install the cloudinary `npm i cloudinary --save`
+- Go to backend/utils folder then create a new folder `cloudinary.js` file & add the code :
+
+```
+import cloudinary from "cloudinary";
+import dotenv from "dotenv";
+
+dotenv.config({ path: "backend/config/config.env" });
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+export const upload_file = (file, folder) => {
+  return new Promise((resolve, reject) => {
+    cloudinary.uploader.upload(
+      file,
+      (result) => {
+        resolve({
+          public_id: result.public_id,
+          url: result.url,
+        });
+      },
+      {
+        resource_type: "auto",
+        folder,
+      },
+    );
+  });
+};
+
+export const delete_file = async (file) => {
+  const res = await cloudinary.uploader.destroy(file);
+
+  if (res.result !== "ok") return true;
+};
 
 ```
