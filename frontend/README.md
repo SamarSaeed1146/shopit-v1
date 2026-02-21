@@ -3609,3 +3609,238 @@ function App() {
 export default App;
 
 ```
+
+## Uploaded User Avatar
+
+- Go to frontend/src/components/user folder then create a new file `UploadAvatar.jsx` & add the code :
+
+```javascript
+import { useEffect, useState } from "react";
+import UserLayout from "../layout/UserLayout";
+import { useNavigate } from "react-router-dom";
+import { useUploadAvatarMutation } from "../../redux/api/userApi";
+import toast from "react-hot-toast";
+import { useSelector } from "react-redux";
+
+function UploadAvatar() {
+  const { user } = useSelector((state) => state.auth);
+  const [avatar, setAvatar] = useState("");
+  const [avatarPreview, setAvatarPreview] = useState(
+    user?.avatar
+      ? user?.avatar?.url || "/images/default_avatar.jpg"
+      : "/images/default_avatar.jpg",
+  );
+
+  const navigate = useNavigate();
+
+  const [uploadAvatar, { isLoading, error, isSuccess }] =
+    useUploadAvatarMutation();
+
+  useEffect(() => {
+    if (error) {
+      toast.error(error?.data?.message || "Failed to upload avatar");
+    }
+    if (isSuccess) {
+      toast.success("Avatar uploaded successfully");
+      navigate("/me/profile");
+    }
+  }, [isSuccess, error, navigate]);
+
+  const submitHandler = (e) => {
+    e.preventDefault();
+
+    const userData = {
+      avatar,
+    };
+    uploadAvatar(userData);
+  };
+
+  const onchange = (e) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (reader.readyState === 2) {
+        setAvatarPreview(reader.result);
+        setAvatar(reader.result);
+      }
+    };
+
+    reader.readAsDataURL(e.target.files[0]);
+  };
+
+  return (
+    <UserLayout>
+      <div className="row wrapper">
+        <div className="col-10 col-lg-8">
+          <form className="shadow rounded bg-body" onSubmit={submitHandler}>
+            <h2 className="mb-4">Upload Avatar</h2>
+
+            <div className="mb-3">
+              <div className="d-flex align-items-center">
+                <div className="me-3">
+                  <figure className="avatar item-rtl">
+                    <img
+                      src={avatarPreview}
+                      className="rounded-circle"
+                      alt="User avatar"
+                    />
+                  </figure>
+                </div>
+                <div className="input-foam">
+                  <label className="form-label" htmlFor="customFile">
+                    Choose Avatar
+                  </label>
+                  <input
+                    type="file"
+                    name="avatar"
+                    className="form-control"
+                    id="customFile"
+                    accept="images/*"
+                    onChange={onchange}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <button
+              id="register_button"
+              type="submit"
+              className="btn w-100 py-2"
+              disabled={isLoading}
+            >
+              {isLoading ? "Uploading..." : "Upload Avatar"}
+            </button>
+          </form>
+        </div>
+      </div>
+    </UserLayout>
+  );
+}
+
+export default UploadAvatar;
+```
+
+- Go to frontend/src/redux/api/userApi.js folder then update the code :
+
+```javascript
+import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { setIsAuthenticated, setLoading, setUser } from "../features/userSlice";
+
+export const userApi = createApi({
+  reducerPath: "userApi",
+  baseQuery: fetchBaseQuery({ baseUrl: "/api/v1" }),
+  tagTypes: ["User"],
+  endpoints: (builder) => ({
+    getMe: builder.query({
+      query: () => `/me`,
+      transformResponse: (result) => result.user,
+      async onQueryStarted({ queryFulfilled, dispatch }) {
+        try {
+          const { data } = await queryFulfilled;
+          dispatch(setUser(data));
+          dispatch(setIsAuthenticated(true));
+          dispatch(setLoading(false));
+        } catch (error) {
+          dispatch(setLoading(false));
+          console.log(error);
+        }
+      },
+      providesTags: ["User"],
+    }),
+    updateProfile: builder.mutation({
+      query(body) {
+        return {
+          url: `/me/update`,
+          method: "PUT",
+          body,
+        };
+      },
+      invalidatesTags: ["User"],
+    }),
+
+    uploadAvatar: builder.mutation({
+      query(body) {
+        return {
+          url: `/me/upload_avatar`,
+          method: "PUT",
+          body,
+        };
+      },
+      invalidatesTags: ["User"],
+    }),
+  }),
+});
+
+export const {
+  useGetMeQuery,
+  useUpdateProfileMutation,
+  useUploadAvatarMutation,
+} = userApi;
+```
+
+- Go to frontend/src/App.js folder & update the code :
+
+```javascript
+import "./App.css";
+
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+
+import Home from "./components/Home";
+import Footer from "./components/layout/Footer";
+import Header from "./components/layout/Header";
+import { Toaster } from "react-hot-toast";
+import ProductDetails from "./components/product/productDetails";
+import Login from "./components/auth/Login";
+import Register from "./components/auth/Register";
+import Profile from "./components/user/profile";
+import UpdateProfile from "./components/user/UpdateProfile";
+import ProtectedRoute from "./components/auth/ProtectedRoute";
+import UploadAvatar from "./components/user/UploadAvatar";
+
+function App() {
+  return (
+    <Router>
+      <div className="App">
+        <Toaster position="top-center" />
+        <Header />
+        <div className="container">
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/product/:id" element={<ProductDetails />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+
+            <Route
+              path="/me/profile"
+              element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/me/update-profile"
+              element={
+                <ProtectedRoute>
+                  <UpdateProfile />
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
+          <Routes>
+            path="/me/update-avatar" element=
+            {
+              <ProtectedRoute>
+                <UploadAvatar />
+              </ProtectedRoute>
+            }
+          </Routes>
+        </div>
+        <Footer />
+      </div>
+    </Router>
+  );
+}
+
+export default App;
+```
