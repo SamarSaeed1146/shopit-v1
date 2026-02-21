@@ -37,9 +37,6 @@ app.listen(3000, () => {
 - Go on backend folder then make a folder of : config and then make a file of : config.env
 - Config.env add port=3000
 - Then make changes in app.js file
-
-```
-
 - Then run : `node app.js` it will show undefine.
 
 ## step # 5
@@ -50,7 +47,7 @@ app.listen(3000, () => {
 - then try this in terminal `npm start`
 - Add this with `"scripts":
 
-```
+```javascript
 {
   "start": "node backend/app.js",
   "dev": "nodemon backend/app.js"
@@ -59,7 +56,7 @@ app.listen(3000, () => {
 
 - Update this to : app.js :
 
-```
+```javascript
 import express from "express";
 
 const app = express();
@@ -67,33 +64,33 @@ import dotenv from "dotenv";
 dotenv.config({ path: "backend/config/config.env" });
 
 app.listen(process.env.PORT, () => {
-  console.log(`Server is running on port ${process.env.PORT} in ${process.env.NODE_ENV} mode.`);
+  console.log(
+    `Server is running on port ${process.env.PORT} in ${process.env.NODE_ENV} mode.`,
+  );
 });
-
 ```
 
 - Add this to config.env file `NODE_ENV=DEVELOPMENT`
 
-#### step # 6
+## step # 6
 
 - Make a folder of `controllers` in backend folder.
 - In controllers folder make `productControllers.js` file.
 - In productControllers.js file add this code:
 
-```
+```javascript
 export const getProducts = async (req, res) => {
   res.status(200).json({ message: "All products" });
 };
-
 ```
 
-#### step # 7
+## step # 7
 
 - Make a folder of `routes` in backend folder.
 - In routes folder make `products.js` file.
 - In products.js file add this code:
 
-```
+```javascript
 import express from "express";
 import { getProducts } from "../controllers/productControllers.js";
 const router = express.Router();
@@ -101,12 +98,11 @@ const router = express.Router();
 router.route("/products").get(getProducts);
 
 export default router;
-
 ```
 
 - Add this to app.js file:
 
-```
+```javascript
 import express from "express";
 
 const app = express();
@@ -118,9 +114,10 @@ import productRoutes from "./routes/products.js";
 app.use("/api/v1", productRoutes);
 
 app.listen(process.env.PORT, () => {
-  console.log(`Server is running on port ${process.env.PORT} in ${process.env.NODE_ENV} mode.`);
+  console.log(
+    `Server is running on port ${process.env.PORT} in ${process.env.NODE_ENV} mode.`,
+  );
 });
-
 ```
 
 ## Database Connection MongoDB
@@ -128,7 +125,7 @@ app.listen(process.env.PORT, () => {
 - In config folder make a new file : `dbconnect.js`.
 - Add this in `dbconnect.js` :
 
-```
+```javascript
 import mongoose from "mongoose";
 
 export const connectDatabase = async () => {
@@ -139,17 +136,16 @@ export const connectDatabase = async () => {
 
   mongoose.connect(DB_URI).then((con) => {
     console.log(
-      `MongoDB Database connected with HOST: ${con?.connection?.host}`
+      `MongoDB Database connected with HOST: ${con?.connection?.host}`,
     );
   });
 };
-
 ```
 
 - In `config.env file` add this: `DB_LOCAL_URI=mongodb://127.0.0.1:27017/shopit` `DB_URI=`
 - In app.js file add: `import { connectDatabase } from "./config/dbConnect.js";` & `connectDatabase();`
 
-```
+```javascript
 import express from "express";
 
 const app = express();
@@ -166,20 +162,19 @@ app.use("/api/v1", productRoutes);
 
 app.listen(process.env.PORT, () => {
   console.log(
-    `Server is running on port ${process.env.PORT} in ${process.env.NODE_ENV} mode.`
+    `Server is running on port ${process.env.PORT} in ${process.env.NODE_ENV} mode.`,
   );
 });
-
 ```
 
 ## Product Schema
 
-#### step # 1
+### Creating Product Model
 
 - In backend folder make a new folder : `models`
 - In `models` folder make a new file : `product.js` & add this :
 
-```
+```javascript
 import mongoose from "mongoose";
 
 const productSchema = new mongoose.Schema(
@@ -270,16 +265,15 @@ const productSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 export default mongoose.model("Product", productSchema);
-
 ```
 
 - Then Go to `productControllers.js` file add this:
 
-```
+```javascript
 import Product from "../models/product.js";
 
 // create new product => /api/v1/products
@@ -295,12 +289,11 @@ export const newProducts = async (req, res) => {
     product,
   });
 };
-
 ```
 
 - Then go to `product.js` file & Add this :
 
-```
+```javascript
 import express from "express";
 import { getProducts } from "../controllers/productControllers.js";
 const router = express.Router();
@@ -309,12 +302,11 @@ router.route("/products").get(getProducts);
 router.route("/admin/products").post(getProducts);
 
 export default router;
-
 ```
 
 - Update app.js file with this :
 
-```
+```javascript
 import express from "express";
 
 const app = express();
@@ -333,19 +325,18 @@ app.use("/api/v1", productRoutes);
 
 app.listen(process.env.PORT, () => {
   console.log(
-    `Server is running on port ${process.env.PORT} in ${process.env.NODE_ENV} mode.`
+    `Server is running on port ${process.env.PORT} in ${process.env.NODE_ENV} mode.`,
   );
 });
-
 ```
 
-#### step # 2
+#### Seeding Products Data
 
 - Make a new folder in `backend`
 - `seeder` in `seeder` folder make two files : `data.js` & `seeder.js`
 - In `data.js` file add this:
 
-```
+```javascript
 export default [
   {
     name: "Sample Product 1",
@@ -421,12 +412,11 @@ export default [
     ],
   },
 ];
-
 ```
 
 - In `seeder.js` add this :
 
-```
+```javascript
 import mongoose from "mongoose";
 import products from "./data.js";
 import product from "../models/product.js";
@@ -448,16 +438,15 @@ const seedProducts = async () => {
 };
 
 seedProducts();
-
 ```
 
 - In `package.json` file add this in `"scripts"` section : `"seeder": "node backend/seeder/seeder.js"`.
 
-#### step # 3
+#### Adding Product Details & Delete Routes
 
 - Go to `productControllers.js` file & add this:
 
-```
+```javascript
 import Product from "../models/product.js";
 
 // create new product => /api/v1/products
@@ -502,14 +491,13 @@ export const updateProduct = async (req, res) => {
     product,
   });
 };
-
 ```
 
-#### step # 4
+#### Updating Product Routes
 
 - Go to `product.js` file in backend/routes/products.js & add this:
 
-```
+```javascript
 import express from "express";
 import {
   getProducts,
@@ -524,14 +512,13 @@ router.route("/products/:id").get(getProductDetails);
 router.route("/products/:id").put(updateProduct);
 
 export default router;
-
 ```
 
-#### step # 5
+#### Adding Delete Product Controller
 
 - Go to `productControllers.js` file & add this:
 
-```
+```javascript
 import Product from "../models/product.js";
 
 // create new product => /api/v1/products
@@ -588,12 +575,11 @@ export const deleteProduct = async (req, res) => {
     message: "Product deleted successfully",
   });
 };
-
 ```
 
 - Go to `products.js` file /backend/routes/products.js & add this:
 
-```
+```javascript
 import express from "express";
 import {
   getProducts,
@@ -610,18 +596,17 @@ router.route("/products/:id").put(updateProduct);
 router.route("/products/:id").delete(deleteProduct);
 
 export default router;
-
 ```
 
 ## Backend Error Handler
 
-#### step # 1
+### Creating Error Handler Utility
 
 - Go on `backend` folder than create a new folder `utils`
 - In `utils` folder make a file of `errorHandler.js`
 - Add this to `errorHandler.js` file :
 
-```
+```javascript
 class ErrorHandler extends Error {
   constructor(message, statusCode) {
     super(message);
@@ -632,32 +617,29 @@ class ErrorHandler extends Error {
 }
 
 export default ErrorHandler;
-
 ```
 
-#### step # 2
+#### step # 2 - Create Error Middleware
 
 - Go on `backend` folder create new folder `middlewares`
 - In `middlewares` folder create a file of `errors.js`
 - Add this to `errors.js` file:
 
-```
+```javascript
 export default (err, req, res, next) => {
   let error = {
     statusCode: err?.statusCode || 500,
-    message: err?.message || 'Internal Server Error',
+    message: err?.message || "Internal Server Error",
   };
   res.status(error.statusCode).json({ message: error.message });
 };
-
-
 ```
 
-#### step # 3
+#### step # 3 - Update App.js with Error Middleware
 
 - Update `app.js` file:
 
-```
+```javascript
 import express from "express";
 
 const app = express();
@@ -679,17 +661,16 @@ app.use(errorMiddleware);
 
 app.listen(process.env.PORT, () => {
   console.log(
-    `Server is running on port ${process.env.PORT} in ${process.env.NODE_ENV} mode.`
+    `Server is running on port ${process.env.PORT} in ${process.env.NODE_ENV} mode.`,
   );
 });
-
 ```
 
-#### step # 4
+## step # 4 -
 
 - Add some code error handler in `ProductControllers.js`:
 
-```
+```javascript
 import Product from "../models/product.js";
 import ErrorHandler from "../utils/errorHandler.js";
 
@@ -747,14 +728,13 @@ export const deleteProduct = async (req, res) => {
     message: "Product deleted successfully",
   });
 };
-
 ```
 
-#### step # 5
+## step # 5 -
 
 - Update the `config.env` file :
 
-```
+```javascript
 port=3000
 NODE_ENV=DEVELOPMENT
 
@@ -762,22 +742,21 @@ DB_LOCAL_URI=mongodb://127.0.0.1:27017/shopit-v1
 DB_URI=mongodb://127.0.0.1:27017/shopit-v1
 ```
 
-#### step # 6
+### Creating Error Handling Middleware
 
 - In backend/middlewares make a new file `catchAsyncErrors.js`:
 
-```
+```javascript
 export default (controllerFunction) => (req, res, next) => {
   Promise.resolve(controllerFunction(req, res, next)).catch(next);
 };
-
 ```
 
-#### step # 7
+#### Wrapping Controllers with Error Handler
 
 - Make a changes in `productControllers.js` file:
 
-```
+```javascript
 import catchAsyncErrors from "../middlewares/catchAsyncErrors.js";
 import Product from "../models/product.js";
 import ErrorHandler from "../utils/errorHandler.js";
@@ -836,14 +815,13 @@ export const deleteProduct = catchAsyncErrors(async (req, res) => {
     message: "Product deleted successfully",
   });
 });
-
 ```
 
-#### step # 8
+#### Handling Specific Error Types
 
 - Make some change in errors.js file /backend/middlewares/errors.js :
 
-```
+```javascript
 import ErrorHandler from "../utils/errorHandler";
 
 export default (err, req, res, next) => {
@@ -875,14 +853,13 @@ export default (err, req, res, next) => {
     }
   }
 };
-
 ```
 
-#### step # 9
+#### Handling Uncaught Exceptions
 
 - Make some changes in app.js file:
 
-```
+```javascript
 import express from "express";
 const app = express();
 import dotenv from "dotenv";
@@ -912,7 +889,7 @@ app.use(errorMiddleware);
 
 const server = app.listen(process.env.PORT, () => {
   console.log(
-    `Server is running on port ${process.env.PORT} in ${process.env.NODE_ENV} mode.`
+    `Server is running on port ${process.env.PORT} in ${process.env.NODE_ENV} mode.`,
   );
 });
 
@@ -926,14 +903,13 @@ process.on("unhandledRejection", (err) => {
     process.exit(1);
   });
 });
-
 ```
 
 ## Adding Filter, Pagination Search
 
 - Go to `/backend/utils` folder & create new file `apiFilters.js`:
 
-```
+```javascript
 class APIFilters {
   constructor(query, queryStr) {
     this.query = query;
@@ -969,12 +945,11 @@ class APIFilters {
 }
 
 export default APIFilters;
-
 ```
 
 - Go to `productControllers.js` file & add filters:
 
-```
+```javascript
 import catchAsyncErrors from "../middlewares/catchAsyncErrors.js";
 import Product from "../models/product.js";
 import APIFilters from "../utils/apiFilters.js";
@@ -1039,14 +1014,13 @@ export const deleteProduct = catchAsyncErrors(async (req, res) => {
     message: "Product deleted successfully",
   });
 });
-
 ```
 
 ## Handle User Routes
 
 - Go to `/backend/controllers/authControllers.js` file & Update this :
 
-```
+```javascript
 import { get } from "mongoose";
 import catchAsyncErrors from "../middlewares/catchAsyncErrors.js";
 import User from "../models/user.js";
@@ -1155,8 +1129,8 @@ export const resetPassword = catchAsyncErrors(async (req, res, next) => {
     return next(
       new ErrorHandler(
         "Password reset token is invalid or has been expired",
-        400
-      )
+        400,
+      ),
     );
   }
 
@@ -1273,12 +1247,11 @@ export const deleteUser = catchAsyncErrors(async (req, res, next) => {
     message: "User deleted successfully",
   });
 });
-
 ```
 
 - Go to /backend/routes/auth.js file & add this:
 
-```
+```javascript
 import express from "express";
 import {
   allUsers,
@@ -1316,14 +1289,13 @@ router
   .delete(isAuthenticatedUser, authorizedRoles("admin"), deleteUser);
 
 export default router;
-
 ```
 
 ## Order Resource
 
 - Go to backend/models & create new file `order.js` then add this :
 
-```
+```javascript
 import mongoose from "mongoose";
 
 const orderSchema = new mongoose.Schema(
@@ -1396,16 +1368,15 @@ const orderSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 export default mongoose.model("Order", orderSchema);
-
 ```
 
 - Go to backend/controllers folder & create new file `orderControllers.js` then add this :
 
-```
+```javascript
 import catchAsyncErrors from "../middlewares/catchAsyncErrors.js";
 import Order from "../models/order.js";
 import ErrorHandler from "../utils/errorHandler.js";
@@ -1444,7 +1415,7 @@ export const newOrder = catchAsyncErrors(async (req, res) => {
 export const getOrderDetails = catchAsyncErrors(async (req, res, next) => {
   const order = await Order.findById(req.params.id).populate(
     "user",
-    "name email"
+    "name email",
   );
 
   if (!order) {
@@ -1519,12 +1490,11 @@ export const deleteOrder = catchAsyncErrors(async (req, res, next) => {
     message: "Order deleted successfully",
   });
 });
-
 ```
 
 - Go to backend/routes folder then create new file `order.js` & add this :
 
-```
+```javascript
 import express from "express";
 const router = express.Router();
 
@@ -1550,12 +1520,11 @@ router
   .delete(isAuthenticated, authorizedRoles("admin"), deleteOrder);
 
 export default router;
-
 ```
 
 - Go to app.js file and update this :
 
-```
+```javascript
 import express from "express";
 const app = express();
 import dotenv from "dotenv";
@@ -1591,7 +1560,7 @@ app.use(errorMiddleware);
 
 const server = app.listen(process.env.PORT, () => {
   console.log(
-    `Server is running on port ${process.env.PORT} in ${process.env.NODE_ENV} mode.`
+    `Server is running on port ${process.env.PORT} in ${process.env.NODE_ENV} mode.`,
   );
 });
 
@@ -1605,14 +1574,13 @@ process.on("unhandledRejection", (err) => {
     process.exit(1);
   });
 });
-
 ```
 
 ## User Reviews
 
 - Go to `backend/controllers/productControllers.js` & Add Review Code :
 
-```
+```javascript
 import catchAsyncErrors from "../middlewares/catchAsyncErrors.js";
 import Product from "../models/product.js";
 import APIFilters from "../utils/apiFilters.js";
@@ -1697,13 +1665,13 @@ export const createProductReview = catchAsyncErrors(async (req, res) => {
   }
 
   const isReviewed = product?.reviews?.find(
-    (rev) => rev.user.toString() === req.user._id.toString()
+    (rev) => rev.user.toString() === req.user._id.toString(),
   );
 
   if (isReviewed) {
     product.reviews.forEach((rev) => {
       if (rev.user.toString() === req?.user?._id.toString()) {
-        (rev.rating = rating), (rev.comment = comment);
+        ((rev.rating = rating), (rev.comment = comment));
       }
     });
   } else {
@@ -1731,7 +1699,7 @@ export const deleteReview = catchAsyncErrors(async (req, res, next) => {
   }
 
   const reviews = product?.reviews?.filter(
-    (rev) => rev._id.toString() !== req?.query?.id.toString()
+    (rev) => rev._id.toString() !== req?.query?.id.toString(),
   );
 
   const numOfReviews = reviews.length;
@@ -1751,7 +1719,7 @@ export const deleteReview = catchAsyncErrors(async (req, res, next) => {
       new: true,
       runValidators: true,
       useFindAndModify: false,
-    }
+    },
   );
 
   res.status(200).json({
@@ -1772,12 +1740,11 @@ export const getProductReviews = catchAsyncErrors(async (req, res, next) => {
     reviews: product.reviews,
   });
 });
-
 ```
 
 - Go to backend/routes/products.js & Add this :
 
-```
+```javascript
 import express from "express";
 import {
   deleteProduct,
@@ -1815,14 +1782,13 @@ router
   .get(isAuthenticatedUser, authorizedRoles("admin"), deleteReview);
 
 export default router;
-
 ```
 
-#### User State
+## User State
 
 - Go to frontend/src/components/auth folder then create new file `Register.jsx` file & add the code
 
-```
+```javascript
 import { useEffect, useState } from "react";
 import { useRegisterMutation } from "../../redux/api/authApi";
 import { toast } from "react-hot-toast";
@@ -1923,12 +1889,11 @@ function Register() {
 }
 
 export default Register;
-
 ```
 
 - Go to frontend/src/redux/api folder then create new file `userApi.js` & Add this code :
 
-```
+```javascript
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { setIsAuthenticated, setUser } from "../features/userSlice";
 
@@ -1953,12 +1918,11 @@ export const userApi = createApi({
 });
 
 export const { useGetMeQuery } = userApi;
-
 ```
 
 - Go to frontend/src/redux & create new folder `features` then create new file `userSlice.js` & add this code :
 
-```
+```javascript
 import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
@@ -1981,12 +1945,11 @@ export const userSlice = createSlice({
 
 export default userSlice.reducer;
 export const { setUser, setIsAuthenticated } = userSlice.actions;
-
 ```
 
 - Go to frontend/src/components/layout/Header.jsx file & update the code :
 
-```
+```javascript
 import { useSelector } from "react-redux";
 import { useGetMeQuery } from "../../redux/api/userApi";
 import Search from "./Search";
@@ -2081,12 +2044,11 @@ const Header = () => {
 };
 
 export default Header;
-
 ```
 
 - Go to frontend/src/redux/store.js file & update the code :
 
-```
+```javascript
 import { configureStore } from "@reduxjs/toolkit";
 import { productsApi } from "./api/productsApi";
 import { authApi } from "./api/authApi";
@@ -2107,12 +2069,11 @@ export const store = configureStore({
       userApi.middleware,
     ),
 });
-
 ```
 
 - Go to frontend/src/App.js file then update the code :
 
-```
+```javascript
 import "./App.css";
 
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
@@ -2146,12 +2107,11 @@ function App() {
 }
 
 export default App;
-
 ```
 
 - Go to frontend/src/redux/api/authApi.js file then update the code :
 
-```
+```javascript
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { userApi } from "./userApi";
 
@@ -2189,7 +2149,6 @@ export const authApi = createApi({
 });
 
 export const { useLoginMutation, useRegisterMutation } = authApi;
-
 ```
 
 ## Setup Cloudinary
@@ -2197,7 +2156,7 @@ export const { useLoginMutation, useRegisterMutation } = authApi;
 - Install the cloudinary `npm i cloudinary --save`
 - Go to backend/utils folder then create a new folder `cloudinary.js` file & add the code :
 
-```
+```javascript
 import cloudinary from "cloudinary";
 import dotenv from "dotenv";
 
@@ -2232,5 +2191,293 @@ export const delete_file = async (file) => {
 
   if (res.result !== "ok") return true;
 };
+```
 
+- Go to backend/controllers/authControllers.js file & update the code
+
+```javascript
+import catchAsyncErrors from "../middlewares/catchAsyncErrors.js";
+import User from "../models/user.js";
+import ErrorHandler from "../utils/errorHandler.js";
+import { sendToken } from "../utils/sendToken.js";
+import sendEmail from "../utils/sendEmail.js";
+import { getResetPasswordTemplate } from "../utils/emailTemplates.js";
+import crypto from "crypto";
+import { upload_file } from "../utils/cloudinary.js";
+
+// Register a User => /api/v1/register
+export const registerUser = catchAsyncErrors(async (req, res, next) => {
+  const { name, email, password } = req.body;
+
+  const user = await User.create({
+    name,
+    email,
+    password,
+  });
+
+  sendToken(user, 201, res);
+});
+
+// Login a User => /api/v1/login
+export const loginUser = catchAsyncErrors(async (req, res, next) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return next(new ErrorHandler("Please enter email & password", 400));
+  }
+
+  const user = await User.findOne({ email }).select("+password");
+
+  if (!user) {
+    return next(new ErrorHandler("Invalid email or password", 401));
+  }
+
+  const isPasswordMatched = await user.comparePassword(password);
+
+  if (!isPasswordMatched) {
+    return next(new ErrorHandler("Invalid email or password", 401));
+  }
+  sendToken(user, 200, res);
+});
+
+// Logout User => /api/v1/logout
+export const logoutUser = catchAsyncErrors(async (req, res, next) => {
+  res.cookie("token", null, {
+    expires: new Date(Date.now()),
+    httpOnly: true,
+  });
+
+  res.status(200).json({
+    success: true,
+    message: "Logged Out",
+  });
+});
+// Upload User Avatar => /api/v1/me/upload_avatar
+export const uploadAvatar = catchAsyncErrors(async (req, res, next) => {
+  const avatarResponse = await upload_file(req.body.avatar, "shopit/avatars");
+
+  const user = await User.findByIdAndUpdate(req?.user.id, {
+    avatar: avatarResponse,
+  });
+
+  res.status(200).json({
+    success: true,
+    user,
+  });
+});
+
+// Forgot password => /api/v1/password/forgot
+
+export const forgotPassword = catchAsyncErrors(async (req, res, next) => {
+  const user = await User.findOne({ email: req.body.email });
+
+  if (!user) {
+    return next(new ErrorHandler("User not found with", 404));
+  }
+
+  const resetToken = user.resetPasswordToken();
+
+  await user.save();
+
+  const resetUrl = `${process.env.FRONTEND_URL}/api/v1/password/reset/${resetToken}`;
+  const message = getResetPasswordTemplate(user?.name, resetUrl);
+  try {
+    await sendEmail({
+      email: user.email,
+      subject: "Shopit Password Recovery",
+      message,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: `Email sent to ${user.email} successfully`,
+    });
+  } catch (error) {
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+    await user.save();
+    return next(new ErrorHandler(error?.message, 500));
+  }
+});
+
+// Reset Password => /api/v1/password/reset/:token
+export const resetPassword = catchAsyncErrors(async (req, res, next) => {
+  // Creating token hash
+  const resetPasswordToken = crypto
+    .createHash("sha256")
+    .update(req.params.token)
+    .digest("hex");
+
+  const user = await User.findOne({
+    resetPasswordToken,
+    resetPasswordExpire: { $gt: Date.now() },
+  });
+
+  if (!user) {
+    return next(
+      new ErrorHandler(
+        "Password reset token is invalid or has been expired",
+        400,
+      ),
+    );
+  }
+
+  if (req.body.password !== req.body.confirmPassword) {
+    return next(new ErrorHandler("Password does not match", 400));
+  }
+
+  user.password = req.body.password;
+  user.resetPasswordToken = undefined;
+  user.resetPasswordExpire = undefined;
+
+  await user.save();
+
+  sendToken(user, 200, res);
+});
+
+//  Get Current User Profile => /api/v1/me
+export const getUserProfile = catchAsyncErrors(async (req, res, next) => {
+  const user = await User.findById(req.user.id);
+
+  res.status(200).json({
+    success: true,
+    user,
+  });
+});
+
+// Update password => /api/v1/password/update
+export const updatePassword = catchAsyncErrors(async (req, res, next) => {
+  const user = await User.findById(req.user.id).select("+password");
+
+  const isPasswordMatched = await user.comparePassword(req.body.oldPassword);
+
+  if (!isPasswordMatched) {
+    return next(new ErrorHandler("Old password is incorrect", 400));
+  }
+
+  user.password = req.body.Password;
+  user.save();
+
+  sendToken(user, 200, res);
+});
+
+// Update User Profile => /api/v1/me/update
+export const updateProfile = catchAsyncErrors(async (req, res, next) => {
+  const newUserData = {
+    name: req.body.name,
+    email: req.body.email,
+  };
+
+  const user = await User.findByIdAndUpdate(req.user.id, newUserData, {
+    new: true,
+  });
+
+  res.status(200).json({
+    user,
+  });
+});
+
+// Get All Users => /api/v1/admin/users
+export const allUsers = catchAsyncErrors(async (req, res, next) => {
+  const users = await User.find();
+
+  res.status(200).json({
+    success: true,
+    users,
+  });
+});
+
+// Get User Details => /api/v1/admin/user/:id
+
+export const getUserDetails = catchAsyncErrors(async (req, res, next) => {
+  const user = await User.findById(req.params.id);
+
+  if (!user) {
+    return next(new ErrorHandler("User not found", 404));
+  }
+
+  res.status(200).json({
+    success: true,
+    user,
+  });
+});
+
+// Update User Details - Admin => /api/v1/admin/users/:id
+export const updateUser = catchAsyncErrors(async (req, res, next) => {
+  const newUserData = {
+    name: req.body.name,
+    email: req.body.email,
+    role: req.body.role,
+  };
+
+  const user = await User.findByIdAndUpdate(req.params.id, newUserData, {
+    new: true,
+  });
+
+  res.status(200).json({
+    success: true,
+    user,
+  });
+});
+
+// Delete User - Admin => /api/v1/admin/users/:id
+export const deleteUser = catchAsyncErrors(async (req, res, next) => {
+  const user = await User.findById(req.params.id);
+
+  if (!user) {
+    return next(new ErrorHandler("User not found with this id", 404));
+  }
+
+  await user.deleteOne();
+
+  res.status(200).json({
+    success: true,
+    message: "User deleted successfully",
+  });
+});
+```
+
+- Go to backend/routes/auth.js file & update the code :
+
+```javascript
+import express from "express";
+import {
+  allUsers,
+  deleteUser,
+  forgotPassword,
+  getUserDetails,
+  getUserProfile,
+  loginUser,
+  logoutUser,
+  registerUser,
+  resetPassword,
+  updatePassword,
+  updateProfile,
+  updateUser,
+  uploadAvatar,
+} from "../controllers/authControllers.js";
+import { isAuthenticatedUser } from "../middlewares/auth.js";
+
+const router = express.Router();
+
+router.route("/register").post(registerUser);
+router.route("/login").post(loginUser);
+router.route("/logout").get(logoutUser);
+router.route("/password/forgot").post(forgotPassword);
+router.route("/password/reset/:token").put(resetPassword);
+router.route("/me").get(isAuthenticatedUser, getUserProfile);
+router.route("/me/update").put(isAuthenticatedUser, updateProfile);
+router.route("/password/update").put(isAuthenticatedUser, updatePassword);
+router.route("/me/upload_avatar").put(isAuthenticatedUser, uploadAvatar);
+
+router
+  .route("/admin/users")
+  .get(isAuthenticatedUser, authorizedRoles("admin"), allUsers);
+router
+  .route("/admin/user/:id")
+  .get(isAuthenticatedUser, authorizedRoles("admin"), getUserDetails)
+  .put(isAuthenticatedUser, authorizedRoles("admin"), updateUser)
+  .delete(isAuthenticatedUser, authorizedRoles("admin"), deleteUser);
+
+export default router;
 ```
