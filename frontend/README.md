@@ -1,6 +1,6 @@
 # Getting Started with Create React App
 
-### `npm start`
+## `npm start`
 
 Runs the app in the development mode.\
 Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
@@ -17,9 +17,9 @@ Your app is ready to be deployed!
 
 See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
 
-### Added Bootstrap :
+### Added Bootstrap
 
-```
+```javascript
 - In `frontend/public/index.html` and add this :
   <!DOCTYPE html>
   <html lang="en">
@@ -54,7 +54,7 @@ See the section about [deployment](https://facebook.github.io/create-react-app/d
 - Go on `frontend` folder & create new folder `components/layout`
 - In `layout` folder create new file `Header.jsx` :
 
-```
+```javascript
 import React from "react";
 
 const Header = () => {
@@ -74,7 +74,8 @@ const Header = () => {
               type="text"
               id="search_field"
               aria-describedby="search_btn"
-              class="form-control"x
+              class="form-control"
+              x
               placeholder="Enter Product Name ..."
               name="keyword"
               value=""
@@ -149,12 +150,11 @@ const Header = () => {
 };
 
 export default Header;
-
 ```
 
 - Go on `components/layout` then create new file `Footer.jsx` :
 
-```
+```javascript
 import React from "react";
 
 const Footer = () => {
@@ -168,12 +168,11 @@ const Footer = () => {
 };
 
 export default Footer;
-
 ```
 
 - Go on `App.css` file remove the code what ever written on it & paste this :
 
-```
+```javascript
 html,
 body {
   font-family: "Amazon Ember";
@@ -744,7 +743,7 @@ footer {
 
 - Go on folder `frontend/src/App.js` & update this :
 
-```
+```javascript
 import "./App.css";
 import Footer from "./components/layout/Footer";
 import Header from "./components/layout/Header";
@@ -759,14 +758,13 @@ function App() {
 }
 
 export default App;
-
 ```
 
 ## Create Home Page
 
 - Go on `frontend/component` create a new file `Home.jsx` & Add this :
 
-```
+```javascript
 import React from "react";
 
 export const Home = () => {
@@ -817,12 +815,11 @@ export const Home = () => {
   );
 };
 export default Home;
-
 ```
 
 - Then Go to frontend/src/App.js & update this :
 
-```
+```javascript
 import "./App.css";
 import Home from "./components/Home";
 import Footer from "./components/layout/Footer";
@@ -841,13 +838,12 @@ function App() {
 }
 
 export default App;
-
 ```
 
 - Install Package `npm i react-router-dom --save`
 - After installing package add this `frontend/src/App.js` file :
 
-```
+```javascript
 import "./App.css";
 
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
@@ -873,12 +869,11 @@ function App() {
 }
 
 export default App;
-
 ```
 
 - Go to frontend/src/components/Home.jsx file & add this :
 
-```
+```javascript
 import React from "react";
 import MetaData from "./layout/metaData";
 
@@ -937,14 +932,13 @@ export const Home = () => {
   );
 };
 export default Home;
-
 ```
 
 - install a package `npm i react-helmet --save`
 - Make a new file of `MetaData.jsx` file
 - At `frontend/src/components/layout/MeteData.jsx` add this :
 
-```
+```javascript
 import React from "react";
 import { Helmet } from "react-helmet";
 
@@ -957,18 +951,17 @@ const MetaData = ({ title }) => {
 };
 
 export default MetaData;
-
 ```
 
 ## Implementing Redux Toolkit
 
-#### Step # 1:
+## Step # 1
 
-- Install package `npm install @reduxjs/toolkit react-redux --save `
+- Install package `npm install @reduxjs/toolkit react-redux --save`
 - Go to `frontend/src` folder create new folders & file `/redux/api/productsApi.js`
 - Add this to `productsApi.js` file :
 
-```
+```javascript
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
 export const productsApi = createApi({
@@ -985,14 +978,13 @@ export const productsApi = createApi({
 });
 
 export const { useGetProductsQuery, useGetProductDetailsQuery } = productsApi;
-
 ```
 
-#### Step # 2:
+## Step # 2
 
 - Go on `frontend/src/redux` folders create new file `store.js`
 
-```
+```javascript
 import { configureStore } from "@reduxjs/toolkit";
 import { productsApi } from "./api/productsApi";
 
@@ -1003,14 +995,13 @@ export const store = configureStore({
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(productsApi.middleware),
 });
-
 ```
 
-#### Step # 3:
+## Step # 3
 
 - Go to `frontend/src/layout` folder then create new file `Loader.jsx` & Add this :
 
-```
+```javascript
 import React from "react";
 
 function Loader() {
@@ -1018,16 +1009,15 @@ function Loader() {
 }
 
 export default Loader;
-
 ```
 
-#### Step # 4:
+## Step # 4
 
 - Go on `frontend/src/components` folder then create new folder `product`
 - In `product` folder create new files `productDetails.jsx & productItem.jsx`
 - Add this in `productDetails.jsx` :
 
-```
+```javascript
 import { useEffect, useState } from "react";
 import { useGetProductDetailsQuery } from "../../redux/api/productsApi";
 import { useParams } from "react-router-dom";
@@ -1039,7 +1029,7 @@ function ProductDetails() {
   const params = useParams();
 
   const { data, isLoading, error, isError } = useGetProductDetailsQuery(
-    params.id
+    params.id,
   );
   const product = data?.product;
 
@@ -1050,7 +1040,7 @@ function ProductDetails() {
       setActiveImg(
         product?.images[0]
           ? product?.images[0]?.url
-          : "/images/default_product.png"
+          : "/images/default_product.png",
       );
     }
   }, [product]);
@@ -1170,12 +1160,11 @@ function ProductDetails() {
 }
 
 export default ProductDetails;
-
 ```
 
 - Add this `productItem.jsx` :
 
-```
+```javascript
 import { Link } from "react-router-dom";
 import { StarRatings } from "react-star-ratings";
 
@@ -1221,14 +1210,13 @@ function ProductItem({ product }) {
 }
 
 export default ProductItem;
-
 ```
 
-#### Step # 5:
+## Step # 5
 
 - In `package.json` file add Proxy
 
-```
+```javascript
 {
   "name": "frontend",
   "version": "0.1.0",
@@ -1278,11 +1266,11 @@ export default ProductItem;
 
 ```
 
-#### Step # 6:
+## Step # 6
 
 - Go on frontend/src/app.js file & add this :
 
-```
+```javascript
 import "./App.css";
 
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
@@ -1312,12 +1300,11 @@ function App() {
 }
 
 export default App;
-
 ```
 
 - Go on frontend/src/index.js file & add this :
 
-```
+```javascript
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
@@ -1330,16 +1317,15 @@ root.render(
     <Provider store={store}>
       <App />
     </Provider>
-  </React.StrictMode>
+  </React.StrictMode>,
 );
-
 ```
 
-#### Step # 7:
+## Step # 7
 
 - Go to folder frontend/src/components/Home.jsx & add this :
 
-```
+```javascript
 import React, { useEffect } from "react";
 import MetaData from "./layout/metaData";
 import { useGetProductsQuery } from "../redux/api/productsApi";
@@ -1380,14 +1366,13 @@ export const Home = () => {
   );
 };
 export default Home;
-
 ```
 
-#### Step # 8:
+## Step # 8
 
 - Go on backend/controllers/productControllers.js file & Add this:
 
-```
+```javascript
 import catchAsyncErrors from "../middlewares/catchAsyncErrors.js";
 import Product from "../models/product.js";
 import APIFilters from "../utils/apiFilters.js";
@@ -1473,13 +1458,13 @@ export const createProductReview = catchAsyncErrors(async (req, res) => {
   }
 
   const isReviewed = product?.reviews?.find(
-    (rev) => rev.user.toString() === req.user._id.toString()
+    (rev) => rev.user.toString() === req.user._id.toString(),
   );
 
   if (isReviewed) {
     product.reviews.forEach((rev) => {
       if (rev.user.toString() === req?.user?._id.toString()) {
-        (rev.rating = rating), (rev.comment = comment);
+        ((rev.rating = rating), (rev.comment = comment));
       }
     });
   } else {
@@ -1507,7 +1492,7 @@ export const deleteReview = catchAsyncErrors(async (req, res, next) => {
   }
 
   const reviews = product?.reviews?.filter(
-    (rev) => rev._id.toString() !== req?.query?.id.toString()
+    (rev) => rev._id.toString() !== req?.query?.id.toString(),
   );
 
   const numOfReviews = reviews.length;
@@ -1527,7 +1512,7 @@ export const deleteReview = catchAsyncErrors(async (req, res, next) => {
       new: true,
       runValidators: true,
       useFindAndModify: false,
-    }
+    },
   );
 
   res.status(200).json({
@@ -1548,16 +1533,15 @@ export const getProductReviews = catchAsyncErrors(async (req, res, next) => {
     reviews: product.reviews,
   });
 });
-
 ```
 
 ## Adding Pagination, Search & Filters
 
-#### Pagination
+### Pagination
 
 - Go to Frontend/src/components/layout folder then create new file CostomPagination.jsx
 
-```
+```javascript
 /* eslint-disable no-undef */
 import React, { useEffect, useState } from "react";
 import Pagination from "react-js-pagination";
@@ -1609,12 +1593,11 @@ const CustomPagination = ({ resPerPage, filteredProductsCount }) => {
 };
 
 export default CustomPagination;
-
 ```
 
 - Go to Frontend/src/componentsHome.jsx folder & add this :
 
-```
+```javascript
 import React, { useEffect } from "react";
 import MetaData from "./layout/metaData";
 import { useGetProductsQuery } from "../redux/api/productsApi";
@@ -1667,12 +1650,11 @@ export const Home = () => {
   );
 };
 export default Home;
-
 ```
 
 - Go on frontend/src/redux/api/productsApi.js & add this
 
-```
+```javascript
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
 export const productsApi = createApi({
@@ -1694,14 +1676,13 @@ export const productsApi = createApi({
 });
 
 export const { useGetProductsQuery, useGetProductDetailsQuery } = productsApi;
-
 ```
 
 #### Search
 
 - Go on frontend/src/components/layout folder then create new file Search.jsx :
 
-```
+```javascript
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -1742,12 +1723,11 @@ const Search = () => {
 };
 
 export default Search;
-
 ```
 
 - Go on frontend/src/components/Home.jsx file then update the code :
 
-```
+```javascript
 import React, { useEffect } from "react";
 import MetaData from "./layout/metaData";
 import { useGetProductsQuery } from "../redux/api/productsApi";
@@ -1814,12 +1794,11 @@ export const Home = () => {
   );
 };
 export default Home;
-
 ```
 
 - Go to frontend/src/components/product/productItem.jsx file & update this code :
 
-```
+```javascript
 import { Link } from "react-router-dom";
 import { StarRatings } from "react-star-ratings";
 
@@ -1865,12 +1844,11 @@ function ProductItem({ product, columnSize }) {
 }
 
 export default ProductItem;
-
 ```
 
 - Go to Frontend/src/redux/api/productsApi.jsx & update this code :
 
-```
+```javascript
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
 export const productsApi = createApi({
@@ -1893,12 +1871,11 @@ export const productsApi = createApi({
 });
 
 export const { useGetProductsQuery, useGetProductDetailsQuery } = productsApi;
-
 ```
 
 - Go to frontend/src/components/layout/Header.jsx file & update this code :
 
-```
+```javascript
 import Search from "./Search";
 
 const Header = () => {
@@ -1978,14 +1955,13 @@ const Header = () => {
 };
 
 export default Header;
-
 ```
 
 #### Filter By Price
 
 - Go to frontend/src/components/layout folder then create new file Filters.jsx then add code :
 
-```
+```javascript
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { getPriceQueryParams } from "../../helpers/helpers";
@@ -2013,11 +1989,7 @@ function Filters() {
       <h3>Filters</h3>
       <hr />
       <h5 className="filter-heading mb-3">Price</h5>
-      <form
-        id="filter_form"
-        className="px-2"
-        onSubmit={handleButtonClick}
-      >
+      <form id="filter_form" className="px-2" onSubmit={handleButtonClick}>
         <div className="row">
           <div className="col">
             <input
@@ -2108,12 +2080,11 @@ function Filters() {
 }
 
 export default Filters;
-
 ```
 
 - Go to frontend/src folder then create new folder `helpers` after that folder then create new file helpers.js then add this code :
 
-```
+```javascript
 export const getPriceQueryParams = (searchParams, key, value) => {
   const hasValueInParam = searchParams.has(key);
 
@@ -2127,12 +2098,11 @@ export const getPriceQueryParams = (searchParams, key, value) => {
 
   return searchParams;
 };
-
 ```
 
 - go to frontend/src/components/Home.jsx folder & ADD this code :
 
-```
+```javascript
 import React, { useEffect } from "react";
 import MetaData from "./layout/metaData";
 import { useGetProductsQuery } from "../redux/api/productsApi";
@@ -2205,12 +2175,11 @@ export const Home = () => {
   );
 };
 export default Home;
-
 ```
 
 - Go to frontend/src/redux/api/productsApi.js then update the code :
 
-```
+```javascript
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
 export const productsApi = createApi({
@@ -2235,14 +2204,13 @@ export const productsApi = createApi({
 });
 
 export const { useGetProductsQuery, useGetProductDetailsQuery } = productsApi;
-
 ```
 
 #### Filter By Rating
 
 - Go to frontend/src/ folder then create new folder `constants` after that create new file `constants.js` & add this code :
 
-```
+```javascript
 export const PRODUCT_CATEGORY = [
   "Electronics",
   "Cameras",
@@ -2255,12 +2223,11 @@ export const PRODUCT_CATEGORY = [
   "Outdoor",
   "Home",
 ];
-
 ```
 
 - go to frontend/src/components/layout/Filters.jsx add this code :
 
-```
+```javascript
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { getPriceQueryParams } from "../../helpers/helpers";
@@ -2415,12 +2382,11 @@ function Filters() {
 }
 
 export default Filters;
-
 ```
 
 - Go to frontend/src/components/Home.jsx & update the code :
 
-```
+```javascript
 import { useEffect } from "react";
 import MetaData from "./layout/metaData";
 import { useGetProductsQuery } from "../redux/api/productsApi";
@@ -2497,12 +2463,11 @@ export const Home = () => {
   );
 };
 export default Home;
-
 ```
 
 - Go to frontend/src/redux/api/productsApi.js & update the code :
 
-```
+```javascript
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
 export const productsApi = createApi({
@@ -2529,17 +2494,16 @@ export const productsApi = createApi({
 });
 
 export const { useGetProductsQuery, useGetProductDetailsQuery } = productsApi;
-
 ```
 
 ## Authentication Frontend
 
-#### Login User
+### Login User
 
 - Go to frontend/src/components folder then create new folder `auth`
 - After that then create new file in auth/Login.jsx & add this code :
 
-```
+```javascript
 import { useEffect, useState } from "react";
 import { useLoginMutation } from "../../redux/api/authApi";
 import toast from "react-hot-toast";
@@ -2623,12 +2587,11 @@ function Login() {
 }
 
 export default Login;
-
 ```
 
 - Go to `frontend/src/redux/api` create new file `authApi.js` & add code :
 
-```
+```javascript
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
 export const authApi = createApi({
@@ -2648,12 +2611,11 @@ export const authApi = createApi({
 });
 
 export const { useLoginMutation } = authApi;
-
 ```
 
 Go to `frontend/src/redux/store.js` file & update the code :
 
-```
+```javascript
 import { configureStore } from "@reduxjs/toolkit";
 import { productsApi } from "./api/productsApi";
 import { authApi } from "./api/authApi";
@@ -2666,12 +2628,11 @@ export const store = configureStore({
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(productsApi.middleware, authApi.middleware),
 });
-
 ```
 
 - Go to `frontend/src/App.js` file then update the code :
 
-```
+```javascript
 import "./App.css";
 
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
@@ -2703,14 +2664,13 @@ function App() {
 }
 
 export default App;
-
 ```
 
 #### Logout User
 
 - Go to Frontend/src/redux/api/authApi.js file & update the code :
 
-```
+```javascript
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { userApi } from "./userApi";
 
@@ -2755,14 +2715,13 @@ export const authApi = createApi({
   }),
 });
 
-export const { useLoginMutation, useRegisterMutation, useLogoutMutation } = authApi;
-
-
+export const { useLoginMutation, useRegisterMutation, useLogoutMutation } =
+  authApi;
 ```
 
 - Go to frontend/src/components/layout/Header.jsx file & update the code :
 
-```
+```javascript
 import { useSelector } from "react-redux";
 import { useGetMeQuery } from "../../redux/api/userApi";
 import Search from "./Search";
@@ -2869,12 +2828,11 @@ const Header = () => {
 };
 
 export default Header;
-
 ```
 
 - Go to frontend/src/components/auth/Login.jsx & update the code :
 
-```
+```javascript
 import { useEffect, useState } from "react";
 import { useLoginMutation } from "../../redux/api/authApi";
 import toast from "react-hot-toast";
@@ -2967,12 +2925,11 @@ function Login() {
 }
 
 export default Login;
-
 ```
 
 - Go to frontend/src/components/auth/Register.jsx file & update the code :
 
-```
+```javascript
 import { useEffect, useState } from "react";
 import { useRegisterMutation } from "../../redux/api/authApi";
 import { toast } from "react-hot-toast";
@@ -3083,16 +3040,15 @@ function Register() {
 }
 
 export default Register;
-
 ```
 
 ## Handle User, Protected Route, Forgot & Reset Password
 
-#### User Layout & Show User Profile
+### User Layout & Show User Profile
 
 - go to `frontend/src/components/layout` folders then create new file `UserLayout.jsx` & add this code :
 
-```
+```javascript
 import SideMenu from "./SideMenu";
 
 function UserLayout({ Children }) {
@@ -3114,12 +3070,11 @@ function UserLayout({ Children }) {
 }
 
 export default UserLayout;
-
 ```
 
 - Go to `Frontend/src/components/layout` folder then create new file `SideMenu.jsx` & add this code :
 
-```
+```javascript
 import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 
@@ -3174,12 +3129,11 @@ function SideMenu() {
 }
 
 export default SideMenu;
-
 ```
 
 - Go to `frontend/src/component` folder then create new folder `user` & create a new file `Profile.jsx` add this code :
 
-```
+```javascript
 import UserLayout from "../layout/UserLayout";
 import { useSelector } from "react-redux";
 
@@ -3215,12 +3169,11 @@ function Profile() {
 }
 
 export default Profile;
-
 ```
 
 - Go to frontend/src/App.js & update the code :
 
-```
+```javascript
 import "./App.css";
 
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
@@ -3256,14 +3209,13 @@ function App() {
 }
 
 export default App;
-
 ```
 
 #### Update User Profile
 
 - Go to Frontend/src/components/user folder then create new file `UpdateProfile.jsx` & Add this code :
 
-```
+```javascript
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUpdateProfileMutation } from "../../redux/api/userApi";
@@ -3361,12 +3313,11 @@ function UpdateProfile() {
 }
 
 export default UpdateProfile;
-
 ```
 
 - Go to `frontend/src/redux/api/userApi.js` file & Update the code :
 
-```
+```javascript
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { setIsAuthenticated, setUser } from "../features/userSlice";
 
@@ -3403,12 +3354,11 @@ export const userApi = createApi({
 });
 
 export const { useGetMeQuery, useUpdateProfileMutation } = userApi;
-
 ```
 
 - Go to `frontend/src/App.js` file & update the code :
 
-```
+```javascript
 import "./App.css";
 
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
@@ -3446,14 +3396,13 @@ function App() {
 }
 
 export default App;
-
 ```
 
 #### Protected Route
 
 - Go to frontend/src/components/auth folder create a new file `ProtectedRoute.jsx` & add this code :
 
-```
+```javascript
 import { useSelector } from "react-redux";
 import { Navigate } from "react-router-dom";
 import Loader from "../layout/Loader";
@@ -3471,12 +3420,11 @@ function ProtectedRoute({ children }) {
 }
 
 export default ProtectedRoute;
-
 ```
 
 - Go to `frontend/src/redux/features/userSlice.js` file & update the code :
 
-```
+```javascript
 import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
@@ -3503,12 +3451,11 @@ export const userSlice = createSlice({
 
 export default userSlice.reducer;
 export const { setUser, setIsAuthenticated, setLoading } = userSlice.actions;
-
 ```
 
 - Go to `frontend/src/redux/api/userApi.js` file & update the code :
 
-```
+```javascript
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { setIsAuthenticated, setLoading, setUser } from "../features/userSlice";
 
@@ -3547,12 +3494,11 @@ export const userApi = createApi({
 });
 
 export const { useGetMeQuery, useUpdateProfileMutation } = userApi;
-
 ```
 
 - Go to `frontend/src/App.js` file & update the code :
 
-```
+```javascript
 import "./App.css";
 
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
@@ -3607,7 +3553,6 @@ function App() {
 }
 
 export default App;
-
 ```
 
 ## Uploaded User Avatar
