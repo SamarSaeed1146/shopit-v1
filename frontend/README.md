@@ -3789,3 +3789,239 @@ function App() {
 
 export default App;
 ```
+
+## Update User Password
+
+- Go to frontend/src/components/user folder then create a new file `UpdatePassword.jsx` file & add this code :
+
+```javascript
+import { useEffect, useState } from "react";
+import { useUploadPasswordMutation } from "../../redux/api/userApi";
+import { useNavigate } from "react-router-dom";
+import { toast } from "react-hot-toast";
+import UserLayout from "../layout/UserLayout";
+
+function UpdatePassword() {
+  const [oldPassword, setOldPassword] = useState("");
+  const [Password, setPassword] = useState("");
+
+  const navigate = useNavigate();
+
+  const [updatePassword, { isLoading, error, isSuccess }] =
+    useUploadPasswordMutation();
+
+  useEffect(() => {
+    if (error) {
+      toast.error(error?.data?.message);
+    }
+
+    if (isSuccess) {
+      toast.success("Password updated successfully");
+      navigate("/me/profile");
+    }
+  }, [error, isSuccess, navigate]);
+
+  const submitHandler = (e) => {
+    e.preventDefault();
+
+    const userData = {
+      oldPassword,
+      Password,
+    };
+
+    updatePassword(userData);
+  };
+
+  return (
+    <UserLayout>
+      <div className="row wrapper">
+        <div className="col-10 col-lg-8">
+          <form className="shadow rounded bg-body" onSubmit={submitHandler}>
+            <h2 className="mb-4">Update Password</h2>
+            <div className="mb-3">
+              <label htmlFor="old_password_field" className="form-label">
+                Old Password
+              </label>
+              <input
+                type="password"
+                id="old_password_field"
+                className="form-control"
+                value={oldPassword}
+                onChange={(e) => setOldPassword(e.target.value)}
+              />
+            </div>
+
+            <div className="mb-3">
+              <label htmlFor="new_password_field" className="form-label">
+                New Password
+              </label>
+              <input
+                type="password"
+                id="new_password_field"
+                className="form-control"
+                value={Password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
+
+            <button
+              type="submit"
+              className="btn update-btn w-100"
+              disabled={isLoading}
+            >
+              {isLoading ? "Updating..." : "Update Password"}
+            </button>
+          </form>
+        </div>
+      </div>
+    </UserLayout>
+  );
+}
+
+export default UpdatePassword;
+```
+
+- Go to frontend/src/redux/api/userApi.js files & Update the code :
+
+```javascript
+import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { setIsAuthenticated, setLoading, setUser } from "../features/userSlice";
+
+export const userApi = createApi({
+  reducerPath: "userApi",
+  baseQuery: fetchBaseQuery({ baseUrl: "/api/v1" }),
+  tagTypes: ["User"],
+  endpoints: (builder) => ({
+    getMe: builder.query({
+      query: () => `/me`,
+      transformResponse: (result) => result.user,
+      async onQueryStarted({ queryFulfilled, dispatch }) {
+        try {
+          const { data } = await queryFulfilled;
+          dispatch(setUser(data));
+          dispatch(setIsAuthenticated(true));
+          dispatch(setLoading(false));
+        } catch (error) {
+          dispatch(setLoading(false));
+          console.log(error);
+        }
+      },
+      providesTags: ["User"],
+    }),
+    updateProfile: builder.mutation({
+      query(body) {
+        return {
+          url: `/me/update`,
+          method: "PUT",
+          body,
+        };
+      },
+      invalidatesTags: ["User"],
+    }),
+
+    uploadAvatar: builder.mutation({
+      query(body) {
+        return {
+          url: `/me/upload_avatar`,
+          method: "PUT",
+          body,
+        };
+      },
+      invalidatesTags: ["User"],
+    }),
+    uploadPassword: builder.mutation({
+      query(body) {
+        return {
+          url: `/password/update`,
+          method: "PUT",
+          body,
+        };
+      },
+    }),
+  }),
+});
+
+export const {
+  useGetMeQuery,
+  useUpdateProfileMutation,
+  useUploadAvatarMutation,
+  useUploadPasswordMutation,
+} = userApi;
+```
+
+- Go to Frontend/src/App.js file & update the code :
+
+```javascript
+import "./App.css";
+
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+
+import Home from "./components/Home";
+import Footer from "./components/layout/Footer";
+import Header from "./components/layout/Header";
+import { Toaster } from "react-hot-toast";
+import ProductDetails from "./components/product/productDetails";
+import Login from "./components/auth/Login";
+import Register from "./components/auth/Register";
+import Profile from "./components/user/profile";
+import UpdateProfile from "./components/user/UpdateProfile";
+import ProtectedRoute from "./components/auth/ProtectedRoute";
+import UploadAvatar from "./components/user/UploadAvatar";
+import UpdatePassword from "./components/user/UpdatePassword";
+
+function App() {
+  return (
+    <Router>
+      <div className="App">
+        <Toaster position="top-center" />
+        <Header />
+        <div className="container">
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/product/:id" element={<ProductDetails />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+
+            <Route
+              path="/me/profile"
+              element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/me/update-profile"
+              element={
+                <ProtectedRoute>
+                  <UpdateProfile />
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
+          <Routes>
+            path="/me/update-avatar" element=
+            {
+              <ProtectedRoute>
+                <UploadAvatar />
+              </ProtectedRoute>
+            }
+          </Routes>
+          <Routes>
+            path="/me/update-password" element=
+            {
+              <ProtectedRoute>
+                <UpdatePassword />
+              </ProtectedRoute>
+            }
+          </Routes>
+        </div>
+        <Footer />
+      </div>
+    </Router>
+  );
+}
+
+export default App;
+```

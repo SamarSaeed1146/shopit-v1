@@ -13,6 +13,7 @@ import Profile from "./components/user/profile";
 import UpdateProfile from "./components/user/UpdateProfile";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import UploadAvatar from "./components/user/UploadAvatar";
+import UpdatePassword from "./components/user/UpdatePassword";
 
 function App() {
   return (
@@ -50,6 +51,14 @@ function App() {
             {
               <ProtectedRoute>
                 <UploadAvatar />
+              </ProtectedRoute>
+            }
+          </Routes>
+          <Routes>
+            path="/me/update-password" element=
+            {
+              <ProtectedRoute>
+                <UpdatePassword />
               </ProtectedRoute>
             }
           </Routes>
