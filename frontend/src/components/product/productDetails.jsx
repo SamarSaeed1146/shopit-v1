@@ -8,19 +8,20 @@ import Loader from "../layout/Loader";
 function ProductDetails() {
   const params = useParams();
 
+  const [quantity, setQuantity] = useState(1);
+  const [activeImg, setActiveImg] = useState("");
+
   const { data, isLoading, error, isError } = useGetProductDetailsQuery(
-    params.id
+    params.id,
   );
   const product = data?.product;
-
-  const [activeImg, setActiveImg] = useState("");
 
   useEffect(() => {
     if (product) {
       setActiveImg(
         product?.images[0]
           ? product?.images[0]?.url
-          : "/images/default_product.png"
+          : "/images/default_product.png",
       );
     }
   }, [product]);
@@ -30,6 +31,20 @@ function ProductDetails() {
       toast.error(error?.data?.message);
     }
   }, [isError, error]);
+
+  const increseQty = () => {
+    const count = document.querySelector(".count");
+    if (count.valueAsNumber >= product?.stock) return;
+    const qty = count.valueAsNumber + 1;
+    setQuantity(qty);
+  };
+
+  const decreseQty = () => {
+    const count = document.querySelector(".count");
+    if (count.valueAsNumber <= 1) return;
+    const qty = count.valueAsNumber - 1;
+    setQuantity(qty);
+  };
 
   if (isLoading) return <Loader />;
   return (
@@ -92,14 +107,18 @@ function ProductDetails() {
 
         <p id="product_price">${product?.price}</p>
         <div className="stockCounter d-inline">
-          <span className="btn btn-danger minus">-</span>
+          <span className="btn btn-danger minus" onClick={decreseQty}>
+            -
+          </span>
           <input
             type="number"
             className="form-control count d-inline"
-            value="1"
+            value={quantity}
             readonly
           />
-          <span className="btn btn-primary plus">+</span>
+          <span className="btn btn-primary plus" onClick={increseQty}>
+            +
+          </span>
         </div>
         <button
           type="button"
