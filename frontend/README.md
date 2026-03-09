@@ -4260,3 +4260,275 @@ function App() {
 
 export default App;
 ```
+
+## Handle Reset Password
+
+- Go to frontend/src/component/auth folder hten create new file `ResetPassword.jsx` & add this code :
+
+```javascript
+import { useEffect, useState } from "react";
+import { useResetPasswordMutation } from "../../redux/api/userApi";
+import { useSelector } from "react-redux";
+import { toast } from "react-hot-toast";
+import { useNavigate, useParams } from "react-router-dom";
+
+function ResetPassword() {
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
+  const navigate = useNavigate();
+  const params = useParams();
+
+  const [resetPassword, { isLoading, error, isSuccess }] =
+    useResetPasswordMutation();
+
+  const { isAuthenticated } = useSelector((state) => state.auth);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate("/");
+    }
+    if (error) {
+      toast.error(error?.data?.message);
+    }
+    if (isSuccess) {
+      toast.success("Password reset successful");
+      navigate("/login");
+    }
+  }, [navigate, isAuthenticated, isSuccess, error]);
+
+  const submitHandler = (e) => {
+    e.preventDefault();
+    if (password !== confirmPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
+
+    const data = {
+      password,
+      confirmPassword,
+    };
+
+    resetPassword({ token: params?.token, body: data });
+  };
+
+  return (
+    <div className="row wrapper">
+      <div className="col-10 col-lg-5">
+        <form className="shadow rounded bg-body" onSubmit={submitHandler}>
+          <h2 className="mb-4">New Password</h2>
+
+          <div className="mb-3">
+            <label htmlFor="password_field" className="form-label">
+              Password
+            </label>
+            <input
+              type="password"
+              id="password_field"
+              className="form-control"
+              name="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </div>
+
+          <div className="mb-3">
+            <label htmlFor="confirm_password_field" className="form-label">
+              Confirm Password
+            </label>
+            <input
+              type="password"
+              id="confirm_password_field"
+              className="form-control"
+              name="confirm_password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+            />
+          </div>
+
+          <button
+            id="new_password_button"
+            type="submit"
+            className="btn w-100 py-2"
+            disabled={isLoading}
+          >
+            Set Password
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+export default ResetPassword;
+```
+
+- Go to frontend/src/redux/api/userApi.js file & update the code :
+
+```javascript
+import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { setIsAuthenticated, setLoading, setUser } from "../features/userSlice";
+
+export const userApi = createApi({
+  reducerPath: "userApi",
+  baseQuery: fetchBaseQuery({ baseUrl: "/api/v1" }),
+  tagTypes: ["User"],
+  endpoints: (builder) => ({
+    getMe: builder.query({
+      query: () => `/me`,
+      transformResponse: (result) => result.user,
+      async onQueryStarted({ queryFulfilled, dispatch }) {
+        try {
+          const { data } = await queryFulfilled;
+          dispatch(setUser(data));
+          dispatch(setIsAuthenticated(true));
+          dispatch(setLoading(false));
+        } catch (error) {
+          dispatch(setLoading(false));
+          console.log(error);
+        }
+      },
+      providesTags: ["User"],
+    }),
+    updateProfile: builder.mutation({
+      query(body) {
+        return {
+          url: `/me/update`,
+          method: "PUT",
+          body,
+        };
+      },
+      invalidatesTags: ["User"],
+    }),
+
+    uploadAvatar: builder.mutation({
+      query(body) {
+        return {
+          url: `/me/upload_avatar`,
+          method: "PUT",
+          body,
+        };
+      },
+      invalidatesTags: ["User"],
+    }),
+    uploadPassword: builder.mutation({
+      query(body) {
+        return {
+          url: `/password/update`,
+          method: "PUT",
+          body,
+        };
+      },
+    }),
+    forgotPassword: builder.mutation({
+      query(body) {
+        return {
+          url: `/password/forgot`,
+          method: "POST",
+          body,
+        };
+      },
+    }),
+    resetPassword: builder.mutation({
+      query({ token, body }) {
+        return {
+          url: `/password/reset/${token}`,
+          method: "PUT",
+          body,
+        };
+      },
+    }),
+  }),
+});
+
+export const {
+  useGetMeQuery,
+  useUpdateProfileMutation,
+  useUploadAvatarMutation,
+  useUploadPasswordMutation,
+  useForgotPasswordMutation,
+  useResetPasswordMutation,
+} = userApi;
+```
+
+- Go to frontend/src/App.js file & update the code :
+
+```javascript
+import "./App.css";
+
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+
+import Home from "./components/Home";
+import Footer from "./components/layout/Footer";
+import Header from "./components/layout/Header";
+import { Toaster } from "react-hot-toast";
+import ProductDetails from "./components/product/productDetails";
+import Login from "./components/auth/Login";
+import Register from "./components/auth/Register";
+import Profile from "./components/user/profile";
+import UpdateProfile from "./components/user/UpdateProfile";
+import ProtectedRoute from "./components/auth/ProtectedRoute";
+import UploadAvatar from "./components/user/UploadAvatar";
+import UpdatePassword from "./components/user/UpdatePassword";
+import ForgotPassword from "./components/auth/ForgotPassword";
+import ResetPassword from "./components/auth/ResetPassword";
+
+function App() {
+  return (
+    <Router>
+      <div className="App">
+        <Toaster position="top-center" />
+        <Header />
+        <div className="container">
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/product/:id" element={<ProductDetails />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+
+            <Route path="/password/forgot" element={<ForgotPassword />} />
+            <Route path="/password/reset/:token" element={<ResetPassword />} />
+
+            <Route
+              path="/me/profile"
+              element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/me/update-profile"
+              element={
+                <ProtectedRoute>
+                  <UpdateProfile />
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
+          <Routes>
+            path="/me/update-avatar" element=
+            {
+              <ProtectedRoute>
+                <UploadAvatar />
+              </ProtectedRoute>
+            }
+          </Routes>
+          <Routes>
+            path="/me/update-password" element=
+            {
+              <ProtectedRoute>
+                <UpdatePassword />
+              </ProtectedRoute>
+            }
+          </Routes>
+        </div>
+        <Footer />
+      </div>
+    </Router>
+  );
+}
+
+export default App;
+```
