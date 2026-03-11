@@ -3,6 +3,7 @@ import { useUploadPasswordMutation } from "../../redux/api/userApi";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import UserLayout from "../layout/UserLayout";
+import MetaData from "../layout/MetaData";
 
 function UpdatePassword() {
   const [oldPassword, setOldPassword] = useState("");
@@ -36,6 +37,8 @@ function UpdatePassword() {
   };
 
   return (
+    <>
+    <MetaData title="Update Password" />
     <UserLayout>
       <div className="row wrapper">
         <div className="col-10 col-lg-8">
@@ -78,6 +81,7 @@ function UpdatePassword() {
         </div>
       </div>
     </UserLayout>
+    </>
   );
 }
 
