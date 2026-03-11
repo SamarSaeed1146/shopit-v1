@@ -4701,7 +4701,7 @@ function ProductDetails() {
 export default ProductDetails;
 ```
 
-### Cart Component
+### Add to Cart Button
 
 - Go to frontend/src/redux/features folder then create a new file cartSlice.js & add this code :
 
@@ -4950,4 +4950,297 @@ export const store = configureStore({
       userApi.middleware,
     ),
 });
+```
+
+### Cart Component
+
+- Go to Frontend/src/component folder then create a new folder `cart`
+- In Cart Folder the create a new file `Cart.jsx` & Add this code :
+
+```javascript
+import { useSelector } from "react-redux";
+import MetaData from "../layout/MetaData";
+import { Link } from "react-router-dom";
+
+function Cart() {
+  const { cartItems } = useSelector((state) => state.cart);
+
+  return (
+    <>
+      <MetaData title={"Your Cart"} />
+      {cartItems.length === 0 ? (
+        <h2 className="mt-5">Your Cart is Empty</h2>
+      ) : (
+        <>
+          <h2 className="mt-5">
+            Your Cart: <b>{cartItems.length} items</b>
+          </h2>
+          <div className="row d-flex justify-content-between">
+            <div className="col-12 col-lg-8">
+              {cartItems?.map((item) => (
+                <>
+                  <hr />
+                  <div className="cart-item" data-key="product1">
+                    <div className="row">
+                      <div className="col-4 col-lg-3">
+                        <img
+                          src={item?.image}
+                          alt="Laptop"
+                          height="90"
+                          width="115"
+                        />
+                      </div>
+                      <div className="col-5 col-lg-3">
+                        <Link to={`/products/${item?.id}`}> {item?.name} </Link>
+                      </div>
+                      <div className="col-4 col-lg-2 mt-4 mt-lg-0">
+                        <p id="card_item_price">${item?.price.toFixed(2)}</p>
+                      </div>
+                      <div className="col-4 col-lg-3 mt-4 mt-lg-0">
+                        <div className="stockCounter d-inline">
+                          <span className="btn btn-danger minus"> - </span>
+                          <input
+                            type="number"
+                            className="form-control count d-inline"
+                            value={item?.quantity}
+                            readonly
+                          />
+                          <span className="btn btn-primary plus"> + </span>
+                        </div>
+                      </div>
+                      <div className="col-4 col-lg-1 mt-4 mt-lg-0">
+                        <i
+                          id="delete_cart_item"
+                          className="fa fa-trash btn btn-danger"
+                        ></i>
+                      </div>
+                    </div>
+                  </div>
+                  <hr />
+                </>
+              ))}
+            </div>
+
+            <div className="col-12 col-lg-3 my-4">
+              <div id="order_summary">
+                <h4>Order Summary</h4>
+                <hr />
+                <p>
+                  Subtotal:{" "}
+                  <span className="order-summary-values">8 (Units)</span>
+                </p>
+                <p>
+                  Est. total:{" "}
+                  <span className="order-summary-values">$1499.97</span>
+                </p>
+                <hr />
+                <button id="checkout_btn" className="btn btn-primary w-100">
+                  Check out
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+    </>
+  );
+}
+
+export default Cart;
+```
+
+- Go to frontend/src/componenets/layout/Header.jsx file & add this code :
+
+```javascript
+import { useSelector } from "react-redux";
+import { useGetMeQuery } from "../../redux/api/userApi";
+import Search from "./Search";
+import { Link, useNavigate } from "react-router-dom";
+import { useLogoutMutation } from "../../redux/api/authApi";
+
+const Header = () => {
+  const navigate = useNavigate();
+
+  const { isLoading } = useGetMeQuery();
+  const [logout] = useLogoutMutation;
+
+  const { user } = useSelector((state) => state.auth);
+  const { cartItems } = useSelector((state) => state.cart);
+
+  const logoutHandler = async () => {
+    logout();
+    navigate(0);
+  };
+
+  return (
+    <nav className="navbar row">
+      <div className="col-12 col-md-3 ps-5">
+        <div className="navbar-brand">
+          <a href="/">
+            <img src="../images/shopit_logo.png" alt="ShopIT Logo" />
+          </a>
+        </div>
+      </div>
+      <div className="col-12 col-md-6 mt-2 mt-md-0">
+        <Search />
+      </div>
+      <div class="col-12 col-md-3 mt-4 mt-md-0 text-center">
+        <a href="/cart" style={{ textDecoration: "none" }}>
+          <span id="cart" class="ms-3">
+            {" "}
+            Cart{" "}
+          </span>
+          <span className="ms-1" id="cart_count">
+            {cartItems?.length}
+          </span>
+        </a>
+
+        {user ? (
+          <div className="ms-4 dropdown">
+            <button
+              className="btn dropdown-toggle text-white"
+              type="button"
+              id="dropDownMenuButton"
+              data-bs-toggle="dropdown"
+              aria-expanded="false"
+            >
+              <figure className="avatar avatar-nav">
+                <img
+                  src={
+                    user?.avatar
+                      ? user?.avatar?.url
+                      : "../images/default_avatar.jpg"
+                  }
+                  alt="User Avatar"
+                  className="rounded-circle"
+                />
+              </figure>
+              <span>{user?.name}</span>
+            </button>
+            <div
+              className="dropdown-menu w-100"
+              aria-labelledby="dropDownMenuButton"
+            >
+              <Link className="dropdown-item" to="/admin/dashboard">
+                {" "}
+                Dashboard{" "}
+              </Link>
+
+              <Link className="dropdown-item" to="/me/orders">
+                {" "}
+                Orders{" "}
+              </Link>
+
+              <Link className="dropdown-item" to="/me/profile">
+                {" "}
+                Profile{" "}
+              </Link>
+
+              <Link
+                className="dropdown-item text-danger"
+                to="/"
+                onClick={logoutHandler}
+              >
+                Logout{" "}
+              </Link>
+            </div>
+          </div>
+        ) : (
+          !isLoading && (
+            <Link to="/login" className="btn ms-4" id="login_btn">
+              {" "}
+              Login{" "}
+            </Link>
+          )
+        )}
+      </div>
+    </nav>
+  );
+};
+
+export default Header;
+```
+
+- Go to Frontend/src/App.js file & update the code :
+
+```javascript
+import "./App.css";
+
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+
+import Home from "./components/Home";
+import Footer from "./components/layout/Footer";
+import Header from "./components/layout/Header";
+import { Toaster } from "react-hot-toast";
+import ProductDetails from "./components/product/productDetails";
+import Login from "./components/auth/Login";
+import Register from "./components/auth/Register";
+import Profile from "./components/user/profile";
+import UpdateProfile from "./components/user/UpdateProfile";
+import ProtectedRoute from "./components/auth/ProtectedRoute";
+import UploadAvatar from "./components/user/UploadAvatar";
+import UpdatePassword from "./components/user/UpdatePassword";
+import ForgotPassword from "./components/auth/ForgotPassword";
+import ResetPassword from "./components/auth/ResetPassword";
+import Cart from "./components/cart/Cart";
+
+function App() {
+  return (
+    <Router>
+      <div className="App">
+        <Toaster position="top-center" />
+        <Header />
+        <div className="container">
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/product/:id" element={<ProductDetails />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+
+            <Route path="/password/forgot" element={<ForgotPassword />} />
+            <Route path="/password/reset/:token" element={<ResetPassword />} />
+
+            <Route
+              path="/me/profile"
+              element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/me/update-profile"
+              element={
+                <ProtectedRoute>
+                  <UpdateProfile />
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
+          <Routes>
+            path="/me/update-avatar" element=
+            {
+              <ProtectedRoute>
+                <UploadAvatar />
+              </ProtectedRoute>
+            }
+          </Routes>
+          <Routes>
+            path="/me/update-password" element=
+            {
+              <ProtectedRoute>
+                <UpdatePassword />
+              </ProtectedRoute>
+            }
+          </Routes>
+          <Routes path="/cart" element={<Cart />} />
+        </div>
+        <Footer />
+      </div>
+    </Router>
+  );
+}
+
+export default App;
 ```
