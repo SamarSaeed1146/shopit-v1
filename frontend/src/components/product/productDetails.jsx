@@ -4,9 +4,12 @@ import { useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import StarRatings from "react-star-ratings";
 import Loader from "../layout/Loader";
+import { useDispatch } from "react-redux";
+import { setCartItem } from "../../redux/features/cartSlice";
 
 function ProductDetails() {
   const params = useParams();
+  const dispatch = useDispatch();
 
   const [quantity, setQuantity] = useState(1);
   const [activeImg, setActiveImg] = useState("");
@@ -44,6 +47,20 @@ function ProductDetails() {
     if (count.valueAsNumber <= 1) return;
     const qty = count.valueAsNumber - 1;
     setQuantity(qty);
+  };
+
+  const setItemToCart = () => {
+    const cartItem = {
+      productId: product?._id,
+      name: product?.name,
+      price: product?.price,
+      image: product?.images[0]?.url,
+      stock: product?.stock,
+      quantity,
+    };
+
+    dispatch(setCartItem(cartItem));
+    toast.success("Item added to cart");
   };
 
   if (isLoading) return <Loader />;
@@ -124,7 +141,8 @@ function ProductDetails() {
           type="button"
           id="cart_btn"
           className="btn btn-primary d-inline ms-4"
-          disabled=""
+          disabled={product?.stock <= 0}
+          onClick={setItemToCart}
         >
           Add to Cart
         </button>
