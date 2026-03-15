@@ -5714,3 +5714,447 @@ function Cart() {
 
 export default Cart;
 ```
+
+## Handle Checkout & COD Order
+
+### Handle Shipping Info
+
+- Go to frontend/src/components/cart folder then create a new file `Shipping.jsx` & Add this code :
+
+```javascript
+import { useEffect, useState } from "react";
+import { countries } from "countries-list";
+import { useDispatch, useSelector } from "react-redux";
+import { saveShippingInfo } from "../../redux/features/cartSlice";
+
+function Shipping() {
+  const countryList = Object.values(countries);
+
+  const dispatch = useDispatch();
+
+  const [address, setAddress] = useState("");
+  const [city, setCity] = useState("");
+  const [zipCode, setZipCode] = useState("");
+  const [phoneNo, setPhoneNo] = useState("");
+  const [country, setCountry] = useState("");
+
+  const { ShippingInfo } = useSelector((state) => state.cart);
+
+  useEffect(() => {
+    if (ShippingInfo) {
+      setAddress(ShippingInfo.address);
+      setCity(ShippingInfo.city);
+      setZipCode(ShippingInfo.zipCode);
+      setPhoneNo(ShippingInfo.phoneNo);
+      setCountry(ShippingInfo.country);
+    }
+  }, [ShippingInfo]);
+
+  const submitHandler = (e) => {
+    e.preventDefault();
+
+    dispatch(saveShippingInfo({ address, city, zipCode, phoneNo, country }));
+  };
+
+  return (
+    <>
+      <div className="row wrapper mb-5">
+        <div className="col-10 col-lg-5">
+          <form className="shadow rounded bg-body" onSubmit={submitHandler}>
+            <h2 className="mb-4">Shipping Info</h2>
+            <div className="mb-3">
+              <label htmlFor="address_field" className="form-label">
+                Address
+              </label>
+              <input
+                type="text"
+                id="address_field"
+                className="form-control"
+                name="address"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                required
+              />
+            </div>
+
+            <div className="mb-3">
+              <label htmlFor="city_field" className="form-label">
+                City
+              </label>
+              <input
+                type="text"
+                id="city_field"
+                className="form-control"
+                name="city"
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+                required
+              />
+            </div>
+
+            <div className="mb-3">
+              <label htmlFor="phone_field" className="form-label">
+                Phone No
+              </label>
+              <input
+                type="tel"
+                id="phone_field"
+                className="form-control"
+                name="phoneNo"
+                value={phoneNo}
+                onChange={(e) => setPhoneNo(e.target.value)}
+                required
+              />
+            </div>
+
+            <div className="mb-3">
+              <label htmlFor="zip_code_field" className="form-label">
+                Zip Code
+              </label>
+              <input
+                type="number"
+                id="zip_code_field"
+                className="form-control"
+                name="postalCode"
+                value={zipCode}
+                onChange={(e) => setZipCode(e.target.value)}
+                required
+              />
+            </div>
+
+            <div className="mb-3">
+              <label htmlFor="country_field" className="form-label">
+                Country
+              </label>
+              <select
+                id="country_field"
+                className="form-select"
+                name="country"
+                value={country}
+                onChange={(e) => setCountry(e.target.value)}
+                required
+              >
+                {countryList.map((country) => (
+                  <option key={country?.name} value={country?.name}>
+                    {country?.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <button id="shipping_btn" type="submit" className="btn w-100 py-2">
+              CONTINUE
+            </button>
+          </form>
+        </div>
+      </div>
+    </>
+  );
+}
+
+export default Shipping;
+```
+
+- Go to frontend/src/redux/features/cartSlice.js file & update the code :
+
+```javascript
+import { createSlice } from "@reduxjs/toolkit";
+
+const initialState = {
+  cartItems: localStorage.getItem("cartItems")
+    ? JSON.parse(localStorage.getItem("cartItems"))
+    : [],
+
+  shippingInfo: localStorage.getItem("shippingInfo")
+    ? JSON.parse(localStorage.getItem("shippingInfo"))
+    : {},
+};
+
+export const cartSlice = createSlice({
+  initialState,
+  name: "cartSlice",
+  reducers: {
+    setCartItem: (state, action) => {
+      const item = action.payload;
+
+      const isItemExist = state.cartItems.find(
+        (i) => i.productId === item.product,
+      );
+      if (isItemExist) {
+        state.cartItems = state.cartItems.map((i) =>
+          i.product === isItemExist.product ? item : i,
+        );
+      } else {
+        state.cartItems.push(item);
+      }
+
+      localStorage.setItem("cartItems", JSON.stringify(state.cartItems));
+    },
+    removeCartItem: (state, action) => {
+      state.cartItems = state.cartItems.filter(
+        (i) => i.productId !== action.payload,
+      );
+      localStorage.setItem("cartItems", JSON.stringify(state.cartItems));
+    },
+    saveShippingInfo: (state, action) => {
+      state.shippingInfo = action.payload;
+      localStorage.setItem("shippingInfo", JSON.stringify(state.shippingInfo));
+    },
+  },
+});
+
+export default cartSlice.reducer;
+export const { setCartItem, removeCartItem, saveShippingInfo } =
+  cartSlice.actions;
+```
+
+- Go to frontend/src/components/cart/Cart.jsx file then update the code :
+
+```javascript
+import { useDispatch, useSelector } from "react-redux";
+import MetaData from "../layout/layout/MetaData";
+import { Link, useNavigate } from "react-router-dom";
+import { setCartItem, removeCartItem } from "../../redux/slices/cartSlice";
+
+function Cart() {
+  const { cartItems } = useSelector((state) => state.cart);
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+  const increseQty = (item, quantity) => {
+    const newQty = quantity + 1;
+    if (newQty > item?.stock) return;
+
+    setItemToCart(item, newQty);
+  };
+
+  const decreseQty = (item, quantity) => {
+    const newQty = quantity - 1;
+    if (newQty <= 0) return;
+    setItemToCart(item, newQty);
+  };
+
+  const setItemToCart = (item, newQty) => {
+    const cartItem = {
+      productId: item?.productId,
+      name: item?.name,
+      price: item?.price,
+      image: item?.images,
+      stock: item?.stock,
+      quantity: newQty,
+    };
+
+    dispatch(setCartItem(cartItem));
+  };
+
+  const removeCartItemHandler = (id) => {
+    dispatch(removeCartItem(id));
+  };
+
+  const checkoutHandler = () => {
+    navigate("/shipping");
+  };
+
+  return (
+    <>
+      <MetaData title={"Your Cart"} />
+      {cartItems.length === 0 ? (
+        <h2 className="mt-5">Your Cart is Empty</h2>
+      ) : (
+        <>
+          <h2 className="mt-5">
+            Your Cart: <b>{cartItems.length} items</b>
+          </h2>
+          <div className="row d-flex justify-content-between">
+            <div className="col-12 col-lg-8">
+              {cartItems?.map((item) => (
+                <>
+                  <hr />
+                  <div className="cart-item" data-key="product1">
+                    <div className="row">
+                      <div className="col-4 col-lg-3">
+                        <img
+                          src={item?.image}
+                          alt="Laptop"
+                          height="90"
+                          width="115"
+                        />
+                      </div>
+                      <div className="col-5 col-lg-3">
+                        <Link to={`/products/${item?.id}`}> {item?.name} </Link>
+                      </div>
+                      <div className="col-4 col-lg-2 mt-4 mt-lg-0">
+                        <p id="card_item_price">${item?.price.toFixed(2)}</p>
+                      </div>
+                      <div className="col-4 col-lg-3 mt-4 mt-lg-0">
+                        <div className="stockCounter d-inline">
+                          <span
+                            className="btn btn-danger minus"
+                            onClick={() => decreseQty(item, item?.quantity)}
+                          >
+                            -
+                          </span>
+                          <input
+                            type="number"
+                            className="form-control count d-inline"
+                            value={item?.quantity}
+                            readonly
+                          />
+                          <span
+                            className="btn btn-primary plus"
+                            onClick={() => increseQty(item, item?.quantity)}
+                          >
+                            {" "}
+                            +{" "}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="col-4 col-lg-1 mt-4 mt-lg-0">
+                        <i
+                          id="delete_cart_item"
+                          className="fa fa-trash btn btn-danger"
+                          onClick={() => removeCartItemHandler(item?.productId)}
+                        ></i>
+                      </div>
+                    </div>
+                  </div>
+                  <hr />
+                </>
+              ))}
+            </div>
+
+            <div className="col-12 col-lg-3 my-4">
+              <div id="order_summary">
+                <h4>Order Summary</h4>
+                <hr />
+                <p>
+                  Units:{" "}
+                  <span className="order-summary-values">
+                    {cartItems?.reduce((acc, item) => acc + item?.quantity, 0)}{" "}
+                    (Units)
+                  </span>
+                </p>
+                <p>
+                  Est. total:{" "}
+                  <span className="order-summary-values">
+                    $
+                    {cartItems
+                      ?.reduce(
+                        (acc, item) => acc + item?.quantity * item?.price,
+                        0,
+                      )
+                      .toFixed(2)}
+                  </span>
+                </p>
+                <hr />
+                <button
+                  id="checkout_btn"
+                  className="btn btn-primary w-100"
+                  onClick={checkoutHandler}
+                >
+                  Check out
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+    </>
+  );
+}
+
+export default Cart;
+```
+
+- Go to Frontend/src/App.js file & update the code :
+
+```javascript
+import "./App.css";
+
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+
+import Home from "./components/Home";
+import Footer from "./components/layout/Footer";
+import Header from "./components/layout/Header";
+import { Toaster } from "react-hot-toast";
+import ProductDetails from "./components/product/productDetails";
+import Login from "./components/auth/Login";
+import Register from "./components/auth/Register";
+import Profile from "./components/user/profile";
+import UpdateProfile from "./components/user/UpdateProfile";
+import ProtectedRoute from "./components/auth/ProtectedRoute";
+import UploadAvatar from "./components/user/UploadAvatar";
+import UpdatePassword from "./components/user/UpdatePassword";
+import ForgotPassword from "./components/auth/ForgotPassword";
+import ResetPassword from "./components/auth/ResetPassword";
+import Cart from "./components/cart/Cart";
+import Shipping from "./components/cart/Shipping";
+
+function App() {
+  return (
+    <Router>
+      <div className="App">
+        <Toaster position="top-center" />
+        <Header />
+        <div className="container">
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/product/:id" element={<ProductDetails />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+
+            <Route path="/password/forgot" element={<ForgotPassword />} />
+            <Route path="/password/reset/:token" element={<ResetPassword />} />
+
+            <Route
+              path="/me/profile"
+              element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/me/update-profile"
+              element={
+                <ProtectedRoute>
+                  <UpdateProfile />
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
+          <Routes>
+            path="/me/update-avatar" element=
+            {
+              <ProtectedRoute>
+                <UploadAvatar />
+              </ProtectedRoute>
+            }
+          </Routes>
+          <Routes>
+            path="/me/update-password" element=
+            {
+              <ProtectedRoute>
+                <UpdatePassword />
+              </ProtectedRoute>
+            }
+          </Routes>
+          <Routes path="/cart" element={<Cart />} />
+          <Routes
+            path="/shipping"
+            element={
+              <ProtectedRoute>
+                <Shipping />
+              </ProtectedRoute>
+            }
+          />
+        </div>
+        <Footer />
+      </div>
+    </Router>
+  );
+}
+
+export default App;
+```
