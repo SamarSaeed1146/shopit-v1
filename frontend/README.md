@@ -6158,3 +6158,401 @@ function App() {
 
 export default App;
 ```
+
+### Confirm Order Details
+
+- Go to frontend/src/components/cart folder then create a new file ConfirmOrder.jsx file & add this code :
+
+```javascript
+import React from "react";
+import MetaData from "../layout/metaData";
+import { useSelector } from "react-redux";
+import { Link, useNavigate } from "react-router-dom";
+import { calculateOrderCost } from "../../helpers/helpers";
+
+function ConfirmOrder() {
+  const { cartItems, ShippingInfo } = useSelector((state) => state.cart);
+  const { user } = useSelector((state) => state.auth);
+
+  const navigate = useNavigate();
+
+  const { itemsPrice, shippingPrice, taxPrice, totalPrice } =
+    calculateOrderCost(cartItems);
+
+  const proceedToPayment = () => {
+    const data = {
+      itemsPrice: itemsPrice.toFixed(2),
+      shippingPrice,
+      taxPrice,
+      totalPrice,
+    };
+    sessionStorage.setItem("orderInfo", JSON.stringify(data));
+    navigate("/payment_method");
+  };
+
+  return (
+    <>
+      <MetaData title={"Confirm Order"} />
+      <div className="row d-flex justify-content-between">
+        <div className="col-12 col-lg-8 mt-5 order-confirm">
+          <h4 className="mb-3">Shipping Info</h4>
+          <p>
+            <b>Name:</b> {user.name}
+          </p>
+          <p>
+            <b>Phone:</b> {ShippingInfo.phoneNo}
+          </p>
+          <p className="mb-4">
+            <b>Address:</b> {ShippingInfo.address}, {ShippingInfo.city},{" "}
+            {ShippingInfo.zipCode}, {ShippingInfo.country}
+          </p>
+
+          <hr />
+          <h4 className="mt-4">Your Cart Items:</h4>
+
+          {cartItems.map((item) => (
+            <>
+              <hr />
+              <div className="cart-item my-1">
+                <div className="row">
+                  <div className="col-4 col-lg-2">
+                    <img src={item.image} alt="Laptop" height="45" width="65" />
+                  </div>
+
+                  <div className="col-5 col-lg-6">
+                    <Link to={`/product/${item.product}`}>{item.name}</Link>
+                  </div>
+
+                  <div className="col-4 col-lg-4 mt-4 mt-lg-0">
+                    <p>
+                      {item.quantity} x ${item.price} ={" "}
+                      <b>${(item.price * item.quantity).toFixed(2)}</b>
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <hr />
+            </>
+          ))}
+        </div>
+
+        <div className="col-12 col-lg-3 my-4">
+          <div id="order_summary">
+            <h4>Order Summary</h4>
+            <hr />
+            <p>
+              Subtotal:{" "}
+              <span className="order-summary-values">
+                ${itemsPrice.toFixed(2)}
+              </span>
+            </p>
+            <p>
+              Shipping:{" "}
+              <span className="order-summary-values">
+                ${shippingPrice.toFixed(2)}
+              </span>
+            </p>
+            <p>
+              Tax:{" "}
+              <span className="order-summary-values">
+                ${taxPrice.toFixed(2)}
+              </span>
+            </p>
+
+            <hr />
+
+            <p>
+              Total: <span className="order-summary-values">${totalPrice}</span>
+            </p>
+
+            <hr />
+            <Link
+              to="/payment_method"
+              id="checkout_btn"
+              className="btn btn-primary w-100"
+              onClick={proceedToPayment}
+            >
+              Proceed to Payment
+            </Link>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+export default ConfirmOrder;
+```
+
+- Go to frontend/src/helpers/helpers.jsx file & update the code :
+
+```javascript
+export const getPriceQueryParams = (searchParams, key, value) => {
+  const hasValueInParam = searchParams.has(key);
+
+  if (value && hasValueInParam) {
+    searchParams.set(key, value);
+  } else if (value) {
+    searchParams.append(key, value);
+  } else if (hasValueInParam) {
+    searchParams.delete(key);
+  }
+
+  return searchParams;
+};
+
+export const calculateOrderCost = (cartItems) => {
+  const itemsPrice = cartItems.reduce(
+    (acc, item) => acc + item.price * item.quantity,
+    0,
+  );
+  const shippingPrice = itemsPrice > 200 ? 0 : 10;
+  const taxPrice = Number((0.15 * itemsPrice).toFixed(2));
+  const totalPrice = (itemsPrice + shippingPrice + taxPrice).toFixed(2);
+  return { itemsPrice, shippingPrice, taxPrice, totalPrice };
+};
+```
+
+- Go to Frontend/src/App.js file & update the code :
+
+```javascript
+import "./App.css";
+
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+
+import Home from "./components/Home";
+import Footer from "./components/layout/Footer";
+import Header from "./components/layout/Header";
+import { Toaster } from "react-hot-toast";
+import ProductDetails from "./components/product/productDetails";
+import Login from "./components/auth/Login";
+import Register from "./components/auth/Register";
+import Profile from "./components/user/profile";
+import UpdateProfile from "./components/user/UpdateProfile";
+import ProtectedRoute from "./components/auth/ProtectedRoute";
+import UploadAvatar from "./components/user/UploadAvatar";
+import UpdatePassword from "./components/user/UpdatePassword";
+import ForgotPassword from "./components/auth/ForgotPassword";
+import ResetPassword from "./components/auth/ResetPassword";
+import Cart from "./components/cart/Cart";
+import Shipping from "./components/cart/Shipping";
+import ConfirmOrder from "./components/cart/ConfirmOrder";
+
+function App() {
+  return (
+    <Router>
+      <div className="App">
+        <Toaster position="top-center" />
+        <Header />
+        <div className="container">
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/product/:id" element={<ProductDetails />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+
+            <Route path="/password/forgot" element={<ForgotPassword />} />
+            <Route path="/password/reset/:token" element={<ResetPassword />} />
+
+            <Route
+              path="/me/profile"
+              element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/me/update-profile"
+              element={
+                <ProtectedRoute>
+                  <UpdateProfile />
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
+          <Routes>
+            path="/me/update-avatar" element=
+            {
+              <ProtectedRoute>
+                <UploadAvatar />
+              </ProtectedRoute>
+            }
+          </Routes>
+          <Routes>
+            path="/me/update-password" element=
+            {
+              <ProtectedRoute>
+                <UpdatePassword />
+              </ProtectedRoute>
+            }
+          </Routes>
+          <Routes path="/cart" element={<Cart />} />
+          <Routes
+            path="/shipping"
+            element={
+              <ProtectedRoute>
+                <Shipping />
+              </ProtectedRoute>
+            }
+          />
+          <Routes
+            path="/confirm-order"
+            element={
+              <ProtectedRoute>
+                <ConfirmOrder />
+              </ProtectedRoute>
+            }
+          />
+        </div>
+        <Footer />
+      </div>
+    </Router>
+  );
+}
+
+export default App;
+```
+
+- go to frontend/src/components/cart/Shipping.jsx file & update the code :
+
+```javascript
+import { useEffect, useState } from "react";
+import { countries } from "countries-list";
+import { useDispatch, useSelector } from "react-redux";
+import { saveShippingInfo } from "../../redux/features/cartSlice";
+import { useNavigate } from "react-router-dom";
+import MetaData from "../layout/metaData";
+
+function Shipping() {
+  const countryList = Object.values(countries);
+
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+  const [address, setAddress] = useState("");
+  const [city, setCity] = useState("");
+  const [zipCode, setZipCode] = useState("");
+  const [phoneNo, setPhoneNo] = useState("");
+  const [country, setCountry] = useState("");
+
+  const { ShippingInfo } = useSelector((state) => state.cart);
+
+  useEffect(() => {
+    if (ShippingInfo) {
+      setAddress(ShippingInfo.address);
+      setCity(ShippingInfo.city);
+      setZipCode(ShippingInfo.zipCode);
+      setPhoneNo(ShippingInfo.phoneNo);
+      setCountry(ShippingInfo.country);
+    }
+  }, [ShippingInfo]);
+
+  const submitHandler = (e) => {
+    e.preventDefault();
+
+    dispatch(saveShippingInfo({ address, city, zipCode, phoneNo, country }));
+
+    navigate("/confirm-order");
+  };
+
+  return (
+    <>
+      <MetaData title={"Shipping Info"} />
+      <div className="row wrapper mb-5">
+        <div className="col-10 col-lg-5">
+          <form className="shadow rounded bg-body" onSubmit={submitHandler}>
+            <h2 className="mb-4">Shipping Info</h2>
+            <div className="mb-3">
+              <label htmlFor="address_field" className="form-label">
+                Address
+              </label>
+              <input
+                type="text"
+                id="address_field"
+                className="form-control"
+                name="address"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                required
+              />
+            </div>
+
+            <div className="mb-3">
+              <label htmlFor="city_field" className="form-label">
+                City
+              </label>
+              <input
+                type="text"
+                id="city_field"
+                className="form-control"
+                name="city"
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+                required
+              />
+            </div>
+
+            <div className="mb-3">
+              <label htmlFor="phone_field" className="form-label">
+                Phone No
+              </label>
+              <input
+                type="tel"
+                id="phone_field"
+                className="form-control"
+                name="phoneNo"
+                value={phoneNo}
+                onChange={(e) => setPhoneNo(e.target.value)}
+                required
+              />
+            </div>
+
+            <div className="mb-3">
+              <label htmlFor="zip_code_field" className="form-label">
+                Zip Code
+              </label>
+              <input
+                type="number"
+                id="zip_code_field"
+                className="form-control"
+                name="postalCode"
+                value={zipCode}
+                onChange={(e) => setZipCode(e.target.value)}
+                required
+              />
+            </div>
+
+            <div className="mb-3">
+              <label htmlFor="country_field" className="form-label">
+                Country
+              </label>
+              <select
+                id="country_field"
+                className="form-select"
+                name="country"
+                value={country}
+                onChange={(e) => setCountry(e.target.value)}
+                required
+              >
+                {countryList.map((country) => (
+                  <option key={country?.name} value={country?.name}>
+                    {country?.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <button id="shipping_btn" type="submit" className="btn w-100 py-2">
+              CONTINUE
+            </button>
+          </form>
+        </div>
+      </div>
+    </>
+  );
+}
+
+export default Shipping;
+```
