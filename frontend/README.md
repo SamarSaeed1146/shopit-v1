@@ -7181,3 +7181,11 @@ function App() {
 
 export default App;
 ```
+
+## Integrate Stripe For Payments
+
+- install a Package :
+
+```javascript
+npm i stripe --save
+```
