@@ -22,8 +22,11 @@ app.use(cookieParser());
 import productRoutes from "./routes/products.js";
 import authRoutes from "./routes/auth.js";
 import orderRoutes from "./routes/order.js";
+import paymentRoutes from "./routes/payment.js";
 
 app.use("/api/v1", orderRoutes);
+
+app.use("/api/v1", paymentRoutes);
 
 app.use("/api/v1", authRoutes);
 
@@ -33,7 +36,7 @@ app.use(errorMiddleware);
 
 const server = app.listen(process.env.PORT, () => {
   console.log(
-    `Server is running on port ${process.env.PORT} in ${process.env.NODE_ENV} mode.`
+    `Server is running on port ${process.env.PORT} in ${process.env.NODE_ENV} mode.`,
   );
 });
 

@@ -2481,3 +2481,136 @@ router
 
 export default router;
 ```
+
+### Stripe Checkout Sessions, Tax & Shipping Rates
+
+- Go to backend/controllers folder then create new file `paymentControllers.js` & add the code :
+
+```javascript
+import catchAsyncErrors from "../middlewares/catchAsyncErrors.js";
+import Stripe from "stripe";
+const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
+
+export const stripeCheckoutSession = catchAsyncErrors(
+  async (req, res, next) => {
+    const body = req.body;
+
+    const line_items = body?.orderItems?.map((item) => {
+      return {
+        price_data: {
+          currency: "pkr",
+          product_data: {
+            name: item?.name,
+            images: [item.image],
+            metadata: {
+              id: item?.productId,
+            },
+          },
+          unit_amount: item.price * 100,
+        },
+        quantity: item?.quantity,
+      };
+    });
+
+    const shippingInfo = body?.shippingInfo;
+
+    const shipping_rate =
+      body?.itemsPrice >= 200 ? "" : "txr_1TEun0CiVmReUqwuHlTpup7O";
+
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ["card"],
+
+      success_url: `${process.env.FRONTEND_URL}/me/orders`,
+      cancel_url: `${process.env.FRONTEND_URL}`,
+      customer_email: req?.user?.email,
+      client_reference_id: req?.user?._id.toString(),
+      mode: "payment",
+      metadata: { ...shippingInfo, itemsPrice: body?.itemsPrice },
+      shipping_options: [
+        {
+          shipping_rate,
+        },
+      ],
+      line_items,
+    });
+
+    res.status(200).json({
+      url: session.url,
+    });
+  },
+);
+```
+
+- Go to backend/routes folder then create a new file `payment.js` & add the code :
+
+```javascript
+import express from "express";
+
+const router = express.Router();
+
+import { isAuthenticatedUser } from "../middlewares/auth.js";
+import { stripeCheckoutSession } from "../controllers/paymentControllers";
+
+router
+  .route("/payment/checkout_session")
+  .post(isAuthenticatedUser, stripeCheckoutSession);
+
+export default router;
+```
+
+- Go to backend/app.js file & update the code :
+
+```javascript
+import express from "express";
+const app = express();
+import dotenv from "dotenv";
+import cookieParser from "cookie-parser";
+import { connectDatabase } from "./config/dbConnect.js";
+import errorMiddleware from "./middlewares/errors.js";
+
+// Handle uncaught exceptions
+process.on("uncaughtException", (err) => {
+  console.log(`Error: ${err.message}`);
+  console.log("Shutting down the server due to Uncaught Exception");
+  process.exit(1);
+});
+
+dotenv.config({ path: "backend/config/config.env" });
+
+connectDatabase();
+
+app.use(express.json());
+app.use(cookieParser());
+
+import productRoutes from "./routes/products.js";
+import authRoutes from "./routes/auth.js";
+import orderRoutes from "./routes/order.js";
+import paymentRoutes from "./routes/payment.js";
+
+app.use("/api/v1", orderRoutes);
+
+app.use("/api/v1", paymentRoutes);
+
+app.use("/api/v1", authRoutes);
+
+app.use("/api/v1", productRoutes);
+
+app.use(errorMiddleware);
+
+const server = app.listen(process.env.PORT, () => {
+  console.log(
+    `Server is running on port ${process.env.PORT} in ${process.env.NODE_ENV} mode.`,
+  );
+});
+
+// Unhandled Promise Rejection Handling
+
+process.on("unhandledRejection", (err) => {
+  console.log(`Error: ${err.message}`);
+  console.log("Shutting down the server due to Unhandled Promise Rejection");
+
+  server.close(() => {
+    process.exit(1);
+  });
+});
+```
