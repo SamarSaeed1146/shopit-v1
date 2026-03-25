@@ -6907,3 +6907,277 @@ function Shipping() {
 
 export default Shipping;
 ```
+
+### Payment Method & Place COD Order
+
+- Go to frontend/src/components/cart folder then create a new file `PaymentMethod.jsx` file then add then code to this file
+
+```javascript
+import MetaData from "../layout/MetaData";
+import { useSelector } from "react-redux";
+import CheckoutSteps from "./CheckoutSteps";
+import { useEffect, useState } from "react";
+import { calculateOrderCost } from "../../helpers/helpers";
+import { useCreateNewOrderMutation } from "../../redux/api/orderApi";
+import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
+
+function PaymentMethod() {
+  const [method, setMethod] = useState("");
+
+  const navigate = useNavigate();
+
+  const { shippingInfo, cartItems } = useSelector((state) => state.cart);
+
+  const [createNewOrder, { error, isSuccess }] = useCreateNewOrderMutation();
+
+  useEffect(() => {
+    if (error) {
+      toast.error(error?.data?.message);
+    }
+    if (isSuccess) {
+      navigate("/");
+    }
+  }, [error, isSuccess, navigate]);
+
+  const submitHandler = (e) => {
+    e.preventDefault();
+
+    const { itemsPrice, shippingPrice, taxPrice, totalPrice } =
+      calculateOrderCost(cartItems);
+
+    if (method === "COD") {
+      const orderData = {
+        shippingInfo,
+        orderItems: cartItems,
+        itemsPrice,
+        shippingAmount: shippingPrice,
+        taxAmount: taxPrice,
+        totalAmount: totalPrice,
+        paymentInfo: {
+          status: "Not Paid",
+        },
+        paymentMethod: "COD",
+      };
+
+      createNewOrder(orderData);
+    }
+
+    if (method === "Card") {
+      alert("Card");
+    }
+  };
+
+  return (
+    <>
+      <MetaData title={"Payment Method"} />
+      <CheckoutSteps shipping confirmOrder payment />
+      <div className="row wrapper">
+        <div className="col-10 col-lg-5">
+          <form className="shadow rounded bg-body" onSubmit={submitHandler}>
+            <h2 className="mb-4">Select Payment Method</h2>
+
+            <div className="form-check">
+              <input
+                className="form-check-input"
+                type="radio"
+                name="payment_mode"
+                id="codradio"
+                value="COD"
+                onChange={(e) => setMethod("COD")}
+              />
+              <label className="form-check-label" htmlFor="codradio">
+                Cash on Delivery
+              </label>
+            </div>
+            <div className="form-check">
+              <input
+                className="form-check-input"
+                type="radio"
+                name="payment_mode"
+                id="cardradio"
+                value="Card"
+                onChange={(e) => setMethod("Card")}
+              />
+              <label className="form-check-label" htmlFor="cardradio">
+                Card - VISA, MasterCard
+              </label>
+            </div>
+
+            <button id="shipping_btn" type="submit" className="btn py-2 w-100">
+              CONTINUE
+            </button>
+          </form>
+        </div>
+      </div>
+    </>
+  );
+}
+
+export default PaymentMethod;
+```
+
+- Go to frontend/src/redux/api folder then create a new file orderApi.js & Add the code :
+
+```javascript
+import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+
+export const orderApi = createApi({
+  reducerPath: "orderApi",
+  baseQuery: fetchBaseQuery({ baseUrl: "/api/v1" }),
+  endpoints: (builder) => ({
+    createNewOrder: builder.mutation({
+      query(body) {
+        return {
+          url: "/orders/new",
+          method: "POST",
+          body,
+        };
+      },
+    }),
+  }),
+});
+
+export const { useCreateNewOrderMutation } = orderApi;
+```
+
+- Go to frontend/src/redux/store.js file & update the code :
+
+```javascript
+import { configureStore } from "@reduxjs/toolkit";
+import { productsApi } from "./api/productsApi";
+import { authApi } from "./api/authApi";
+import { userApi } from "./api/userApi";
+import { useReducer } from "./features/userSlice";
+import { cartReducer } from "./features/cartSlice";
+import { orderApi } from "./api/orderApi";
+
+export const store = configureStore({
+  reducer: {
+    auth: useReducer,
+    cart: cartReducer,
+    [productsApi.reducerPath]: productsApi.reducer,
+    [authApi.reducerPath]: authApi.reducer,
+    [userApi.reducerPath]: userApi.reducer,
+    [orderApi.reducerPath]: orderApi.reducer,
+  },
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware().concat(
+      productsApi.middleware,
+      authApi.middleware,
+      userApi.middleware,
+      orderApi.middleware,
+    ),
+});
+```
+
+- Go to frontend/src/App.js file & update the code :
+
+```javascript
+import "./App.css";
+
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+
+import Home from "./components/Home";
+import Footer from "./components/layout/Footer";
+import Header from "./components/layout/Header";
+import { Toaster } from "react-hot-toast";
+import ProductDetails from "./components/product/productDetails";
+import Login from "./components/auth/Login";
+import Register from "./components/auth/Register";
+import Profile from "./components/user/profile";
+import UpdateProfile from "./components/user/UpdateProfile";
+import ProtectedRoute from "./components/auth/ProtectedRoute";
+import UploadAvatar from "./components/user/UploadAvatar";
+import UpdatePassword from "./components/user/UpdatePassword";
+import ForgotPassword from "./components/auth/ForgotPassword";
+import ResetPassword from "./components/auth/ResetPassword";
+import Cart from "./components/cart/Cart";
+import Shipping from "./components/cart/Shipping";
+import ConfirmOrder from "./components/cart/ConfirmOrder";
+import PaymentMethod from "./components/cart/PaymentMethod";
+
+function App() {
+  return (
+    <Router>
+      <div className="App">
+        <Toaster position="top-center" />
+        <Header />
+        <div className="container">
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/product/:id" element={<ProductDetails />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+
+            <Route path="/password/forgot" element={<ForgotPassword />} />
+            <Route path="/password/reset/:token" element={<ResetPassword />} />
+
+            <Route
+              path="/me/profile"
+              element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/me/update-profile"
+              element={
+                <ProtectedRoute>
+                  <UpdateProfile />
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
+          <Routes>
+            path="/me/update-avatar" element=
+            {
+              <ProtectedRoute>
+                <UploadAvatar />
+              </ProtectedRoute>
+            }
+          </Routes>
+          <Routes>
+            path="/me/update-password" element=
+            {
+              <ProtectedRoute>
+                <UpdatePassword />
+              </ProtectedRoute>
+            }
+          </Routes>
+          <Routes path="/cart" element={<Cart />} />
+          <Routes
+            path="/shipping"
+            element={
+              <ProtectedRoute>
+                <Shipping />
+              </ProtectedRoute>
+            }
+          />
+          <Routes
+            path="/confirm_order"
+            element={
+              <ProtectedRoute>
+                <ConfirmOrder />
+              </ProtectedRoute>
+            }
+          />
+          <Routes
+            path="/payment_method"
+            element={
+              <ProtectedRoute>
+                <PaymentMethod />
+              </ProtectedRoute>
+            }
+          />
+        </div>
+        <Footer />
+      </div>
+    </Router>
+  );
+}
+
+export default App;
+```
