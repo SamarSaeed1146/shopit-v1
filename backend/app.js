@@ -16,7 +16,14 @@ dotenv.config({ path: "backend/config/config.env" });
 
 connectDatabase();
 
-app.use(express.json());
+app.use(
+  express.json({
+    limit: "10mb",
+    verify: (req, res, buf) => {
+      req.rawBody = buf.toString();
+    },
+  }),
+);
 app.use(cookieParser());
 
 import productRoutes from "./routes/products.js";
