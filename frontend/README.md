@@ -7364,3 +7364,256 @@ function PaymentMethod() {
 
 export default PaymentMethod;
 ```
+
+## User Orders, Invoice & Reviews
+
+### Logged In User Order
+
+- Go to frontend/src/components folder then create new folder `order` after that crate the new file `MyOrders.jsx` then add the code :
+
+```javascript
+import { useEffect } from "react";
+import { useMyOrdersQuery } from "../../redux/api/orderApi";
+import { toast } from "react-toastify";
+import Loader from "../layout/Loader";
+import { MDBDataTable } from "mdbreact";
+import { Link } from "react-router-dom";
+
+function MyOrders() {
+  const { data, isLoading, error } = useMyOrdersQuery();
+
+  useEffect(() => {
+    if (error) {
+      toast.error(error?.data?.message);
+    }
+  }, [error]);
+
+  const setOrders = () => {
+    const orders = {
+      columns: [
+        {
+          label: "ID",
+          field: "id",
+          sort: "asc",
+        },
+        {
+          label: "Amount",
+          field: "amount",
+          sort: "asc",
+        },
+        {
+          label: "Payment Status",
+          field: "paymentStatus",
+          sort: "asc",
+        },
+        {
+          label: "Order Status",
+          field: "orderStatus",
+          sort: "asc",
+        },
+        {
+          label: "Actions",
+          field: "actions",
+          sort: "asc",
+        },
+      ],
+      rows: [],
+    };
+
+    data?.orders?.forEach((order) => {
+      orders.rows.push({
+        id: order?._id,
+        amount: `$${order.totalPrice}`,
+        paymentStatus: order?.paymentInfo?.status?.toUpperCase(),
+        orderStatus: order?.orderStatus,
+        actions: (
+          <>
+            <Link to={`/me/orders/${order._id}`} className="btn btn-primary">
+              <i className="fa fa-eye"></i>
+            </Link>
+            <Link
+              to={`/invoice/orders/${order._id}`}
+              className="btn btn-success ms-2"
+            >
+              <i className="fa fa-print"></i>
+            </Link>
+          </>
+        ),
+      });
+    });
+
+    return orders;
+  };
+
+  if (isLoading) return <Loader />;
+
+  return (
+    <div>
+      <h1 className="my-5">{data?.orders?.length} Orders</h1>
+      <MDBDataTable />
+    </div>
+  );
+}
+
+export default MyOrders;
+```
+
+- Go to frontend/src/App.js file & Update the code :
+
+```javascript
+import "./App.css";
+
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+
+import Home from "./components/Home";
+import Footer from "./components/layout/Footer";
+import Header from "./components/layout/Header";
+import { Toaster } from "react-hot-toast";
+import ProductDetails from "./components/product/productDetails";
+import Login from "./components/auth/Login";
+import Register from "./components/auth/Register";
+import Profile from "./components/user/profile";
+import UpdateProfile from "./components/user/UpdateProfile";
+import ProtectedRoute from "./components/auth/ProtectedRoute";
+import UploadAvatar from "./components/user/UploadAvatar";
+import UpdatePassword from "./components/user/UpdatePassword";
+import ForgotPassword from "./components/auth/ForgotPassword";
+import ResetPassword from "./components/auth/ResetPassword";
+import Cart from "./components/cart/Cart";
+import Shipping from "./components/cart/Shipping";
+import ConfirmOrder from "./components/cart/ConfirmOrder";
+import PaymentMethod from "./components/cart/PaymentMethod";
+import MyOrders from "./components/order/MyOrders";
+
+function App() {
+  return (
+    <Router>
+      <div className="App">
+        <Toaster position="top-center" />
+        <Header />
+        <div className="container">
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/product/:id" element={<ProductDetails />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+
+            <Route path="/password/forgot" element={<ForgotPassword />} />
+            <Route path="/password/reset/:token" element={<ResetPassword />} />
+
+            <Route
+              path="/me/profile"
+              element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/me/update-profile"
+              element={
+                <ProtectedRoute>
+                  <UpdateProfile />
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
+          <Routes>
+            path="/me/update-avatar" element=
+            {
+              <ProtectedRoute>
+                <UploadAvatar />
+              </ProtectedRoute>
+            }
+          </Routes>
+          <Routes>
+            path="/me/update-password" element=
+            {
+              <ProtectedRoute>
+                <UpdatePassword />
+              </ProtectedRoute>
+            }
+          </Routes>
+          <Routes path="/cart" element={<Cart />} />
+          <Routes
+            path="/shipping"
+            element={
+              <ProtectedRoute>
+                <Shipping />
+              </ProtectedRoute>
+            }
+          />
+          <Routes
+            path="/confirm_order"
+            element={
+              <ProtectedRoute>
+                <ConfirmOrder />
+              </ProtectedRoute>
+            }
+          />
+          <Routes
+            path="/payment_method"
+            element={
+              <ProtectedRoute>
+                <PaymentMethod />
+              </ProtectedRoute>
+            }
+          />
+          <Routes
+            path="/me/orders"
+            element={
+              <ProtectedRoute>
+                <MyOrders />
+              </ProtectedRoute>
+            }
+          />
+        </div>
+        <Footer />
+      </div>
+    </Router>
+  );
+}
+
+export default App;
+```
+
+- Go to frontend/src/redux/api/orderApi.js File & update the code :
+
+```javascript
+import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+
+export const orderApi = createApi({
+  reducerPath: "orderApi",
+  baseQuery: fetchBaseQuery({ baseUrl: "/api/v1" }),
+  endpoints: (builder) => ({
+    createNewOrder: builder.mutation({
+      query(body) {
+        return {
+          url: "/orders/new",
+          method: "POST",
+          body,
+        };
+      },
+    }),
+    MyOrders: builder.query({
+      query: () => "/me/orders",
+    }),
+    stripeCheckoutSession: builder.mutation({
+      query(body) {
+        return {
+          url: "/payment/checkout_session",
+          method: "POST",
+          body,
+        };
+      },
+    }),
+  }),
+});
+
+export const {
+  useCreateNewOrderMutation,
+  useStripeCheckoutSessionMutation,
+  useMyOrdersQuery,
+} = orderApi;
+```
