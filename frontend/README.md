@@ -7617,3 +7617,421 @@ export const {
   useMyOrdersQuery,
 } = orderApi;
 ```
+
+### Display Order Details
+
+- Go to frontend/src/components/order/MyOrders.jsx file & update the code :
+
+```javascript
+import { useEffect } from "react";
+import { useMyOrdersQuery } from "../../redux/api/orderApi";
+import { toast } from "react-toastify";
+import Loader from "../layout/Loader";
+import { MDBDataTable } from "mdbreact";
+import { Link } from "react-router-dom";
+import MetaData from "../layout/MetaData";
+
+function MyOrders() {
+  const { data, isLoading, error } = useMyOrdersQuery();
+
+  useEffect(() => {
+    if (error) {
+      toast.error(error?.data?.message);
+    }
+  }, [error]);
+
+  const setOrders = () => {
+    const orders = {
+      columns: [
+        {
+          label: "ID",
+          field: "id",
+          sort: "asc",
+        },
+        {
+          label: "Amount",
+          field: "amount",
+          sort: "asc",
+        },
+        {
+          label: "Payment Status",
+          field: "paymentStatus",
+          sort: "asc",
+        },
+        {
+          label: "Order Status",
+          field: "orderStatus",
+          sort: "asc",
+        },
+        {
+          label: "Actions",
+          field: "actions",
+          sort: "asc",
+        },
+      ],
+      rows: [],
+    };
+
+    data?.orders?.forEach((order) => {
+      orders.rows.push({
+        id: order?._id,
+        amount: `$${order.totalPrice}`,
+        paymentStatus: order?.paymentInfo?.status?.toUpperCase(),
+        orderStatus: order?.orderStatus,
+        actions: (
+          <>
+            <Link to={`/me/orders/${order._id}`} className="btn btn-primary">
+              <i className="fa fa-eye"></i>
+            </Link>
+            <Link
+              to={`/invoice/orders/${order._id}`}
+              className="btn btn-success ms-2"
+            >
+              <i className="fa fa-print"></i>
+            </Link>
+          </>
+        ),
+      });
+    });
+
+    return orders;
+  };
+
+  if (isLoading) return <Loader />;
+
+  return (
+    <div>
+      <MetaData title={"My Orders"} />
+      <h1 className="my-5">{data?.orders?.length} Orders</h1>
+
+      <MDBDataTable data={setOrders()} />
+    </div>
+  );
+}
+
+export default MyOrders;
+```
+
+- Go to frontend/src/App.js file & update the code :
+
+```javascript
+import "./App.css";
+
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+
+import Home from "./components/Home";
+import Footer from "./components/layout/Footer";
+import Header from "./components/layout/Header";
+import { Toaster } from "react-hot-toast";
+import ProductDetails from "./components/product/productDetails";
+import Login from "./components/auth/Login";
+import Register from "./components/auth/Register";
+import Profile from "./components/user/profile";
+import UpdateProfile from "./components/user/UpdateProfile";
+import ProtectedRoute from "./components/auth/ProtectedRoute";
+import UploadAvatar from "./components/user/UploadAvatar";
+import UpdatePassword from "./components/user/UpdatePassword";
+import ForgotPassword from "./components/auth/ForgotPassword";
+import ResetPassword from "./components/auth/ResetPassword";
+import Cart from "./components/cart/Cart";
+import Shipping from "./components/cart/Shipping";
+import ConfirmOrder from "./components/cart/ConfirmOrder";
+import PaymentMethod from "./components/cart/PaymentMethod";
+import MyOrders from "./components/order/MyOrders";
+import OrderDetails from "./components/order/OrderDetails";
+
+function App() {
+  return (
+    <Router>
+      <div className="App">
+        <Toaster position="top-center" />
+        <Header />
+        <div className="container">
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/product/:id" element={<ProductDetails />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+
+            <Route path="/password/forgot" element={<ForgotPassword />} />
+            <Route path="/password/reset/:token" element={<ResetPassword />} />
+
+            <Route
+              path="/me/profile"
+              element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/me/update-profile"
+              element={
+                <ProtectedRoute>
+                  <UpdateProfile />
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
+          <Routes>
+            path="/me/update-avatar" element=
+            {
+              <ProtectedRoute>
+                <UploadAvatar />
+              </ProtectedRoute>
+            }
+          </Routes>
+          <Routes>
+            path="/me/update-password" element=
+            {
+              <ProtectedRoute>
+                <UpdatePassword />
+              </ProtectedRoute>
+            }
+          </Routes>
+          <Routes path="/cart" element={<Cart />} />
+          <Routes
+            path="/shipping"
+            element={
+              <ProtectedRoute>
+                <Shipping />
+              </ProtectedRoute>
+            }
+          />
+          <Routes
+            path="/confirm_order"
+            element={
+              <ProtectedRoute>
+                <ConfirmOrder />
+              </ProtectedRoute>
+            }
+          />
+          <Routes
+            path="/payment_method"
+            element={
+              <ProtectedRoute>
+                <PaymentMethod />
+              </ProtectedRoute>
+            }
+          />
+          <Routes
+            path="/me/orders"
+            element={
+              <ProtectedRoute>
+                <MyOrders />
+              </ProtectedRoute>
+            }
+          />
+          <Routes
+            path="/me/orders/:id"
+            element={
+              <ProtectedRoute>
+                <OrderDetails />
+              </ProtectedRoute>
+            }
+          />
+        </div>
+        <Footer />
+      </div>
+    </Router>
+  );
+}
+
+export default App;
+```
+
+- Go to frontend/src/redux/api/orderApi.js file & update the code :
+
+```javascript
+import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+
+export const orderApi = createApi({
+  reducerPath: "orderApi",
+  baseQuery: fetchBaseQuery({ baseUrl: "/api/v1" }),
+  endpoints: (builder) => ({
+    createNewOrder: builder.mutation({
+      query(body) {
+        return {
+          url: "/orders/new",
+          method: "POST",
+          body,
+        };
+      },
+    }),
+    MyOrders: builder.query({
+      query: () => "/me/orders",
+    }),
+    orderDetails: builder.query({
+      query: (id) => `/orders/${id}`,
+    }),
+    stripeCheckoutSession: builder.mutation({
+      query(body) {
+        return {
+          url: "/payment/checkout_session",
+          method: "POST",
+          body,
+        };
+      },
+    }),
+  }),
+});
+
+export const {
+  useCreateNewOrderMutation,
+  useStripeCheckoutSessionMutation,
+  useMyOrdersQuery,
+  useOrderDetailsQuery,
+} = orderApi;
+```
+
+- Go to frontend/src/components/order/OrderDetails.jsx
+
+```javascript
+import { Link, useParams } from "react-router-dom";
+import { useOrderDetailsQuery } from "../../redux/api/orderApi";
+import MetaData from "../layout/MetaData";
+import Loader from "../layout/Loader";
+import { useEffect } from "react";
+import { toast } from "react-toastify";
+
+function OrderDetails() {
+  const params = useParams();
+  const { data, isLoading, error } = useOrderDetailsQuery(params.id);
+  const order = data?.order || {};
+
+  const {
+    shippingInfo,
+    orderItems,
+    paymentInfo,
+    totalAmount,
+    orderStatus,
+    user,
+  } = order;
+
+  const isPaid = paymentInfo?.status === "paid" ? true : false;
+
+  useEffect(() => {
+    if (error) {
+      toast.error(error?.data?.message);
+    }
+  }, [error]);
+
+  if (isLoading) return <Loader />;
+
+  return (
+    <>
+      <MetaData title={"Order Details"} />
+      <div className="row d-flex justify-content-center">
+        <div className="col-12 col-lg-9 mt-5 order-details">
+          <div className="d-flex justify-content-between align-items-center">
+            <h3 className="mt-5 mb-4">Your Order Details</h3>
+            <a className="btn btn-success" href="/invoice/order/order-id">
+              <i className="fa fa-print"></i> Invoice
+            </a>
+          </div>
+          <table className="table table-striped table-bordered">
+            <tbody>
+              <tr>
+                <th scope="row">ID</th>
+                <td>{order?._id}</td>
+              </tr>
+              <tr>
+                <th scope="row">Status</th>
+                <td
+                  className={
+                    String(orderStatus).includes("Delivered")
+                      ? "greenColor"
+                      : "redColor"
+                  }
+                >
+                  <b>{orderStatus}</b>
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">Date</th>
+                <td>{new Date(order?.createdAt).toDateString("en-US")} </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h3 className="mt-5 mb-4">Shipping Info</h3>
+          <table className="table table-striped table-bordered">
+            <tbody>
+              <tr>
+                <th scope="row">Name</th>
+                <td>{user?.name}</td>
+              </tr>
+              <tr>
+                <th scope="row">Phone No</th>
+                <td>{shippingInfo?.phoneNo}</td>
+              </tr>
+              <tr>
+                <th scope="row">Address</th>
+                <td>{shippingInfo?.address}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h3 className="mt-5 mb-4">Payment Info</h3>
+          <table className="table table-striped table-bordered">
+            <tbody>
+              <tr>
+                <th scope="row">Status</th>
+                <td className={isPaid ? "greenColor" : "redColor"}>
+                  <b>{paymentInfo?.status}</b>
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">Method</th>
+                <td>{paymentInfo?.method}</td>
+              </tr>
+              <tr>
+                <th scope="row">Stripe ID</th>
+                <td>{paymentInfo?.stripeId || "Not Paid"}</td>
+              </tr>
+              <tr>
+                <th scope="row">Amount Paid</th>
+                <td>${totalAmount?.toFixed(2)}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h3 className="mt-5 my-4">Order Items:</h3>
+
+          <hr />
+          <div className="cart-item my-1">
+            {orderItems?.map((item) => (
+              <div className="row my-5">
+                <div className="col-4 col-lg-2">
+                  <img
+                    src={item?.image}
+                    alt={item?.name}
+                    height="45"
+                    width="65"
+                  />
+                </div>
+
+                <div className="col-5 col-lg-5">
+                  <Link to={`/products/${item?.id}`}>{item?.name}</Link>
+                </div>
+
+                <div className="col-4 col-lg-2 mt-4 mt-lg-0">
+                  <p>${item?.price?.toFixed(2)}</p>
+                </div>
+
+                <div className="col-4 col-lg-3 mt-4 mt-lg-0">
+                  <p>{item?.quantity} Piece(s)</p>
+                </div>
+              </div>
+            ))}
+          </div>
+          <hr />
+        </div>
+      </div>
+    </>
+  );
+}
+
+export default OrderDetails;
+```

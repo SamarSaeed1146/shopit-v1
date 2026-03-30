@@ -4,6 +4,7 @@ import { toast } from "react-toastify";
 import Loader from "../layout/Loader";
 import { MDBDataTable } from "mdbreact";
 import { Link } from "react-router-dom";
+import MetaData from "../layout/MetaData";
 
 function MyOrders() {
   const { data, isLoading, error } = useMyOrdersQuery();
@@ -75,8 +76,10 @@ function MyOrders() {
 
   return (
     <div>
+      <MetaData title={"My Orders"} />
       <h1 className="my-5">{data?.orders?.length} Orders</h1>
-      <MDBDataTable />
+
+      <MDBDataTable data={setOrders()} />
     </div>
   );
 }
