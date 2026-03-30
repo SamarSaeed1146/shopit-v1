@@ -8339,3 +8339,439 @@ export default cartSlice.reducer;
 export const { setCartItem, removeCartItem, saveShippingInfo, clearCart } =
   cartSlice.actions;
 ```
+
+### Generate Order Invioce
+
+- Go to frontend/src/components folder then create new folder `invoice` then create new file `Invoice.jsx` file & update the code :
+
+```javascript
+import { useParams } from "react-router-dom";
+import MetaData from "../layout/metaData";
+import "./invoice.css";
+import { useOrderDetailsQuery } from "../../redux/api/orderApi";
+import Loader from "../layout/Loader";
+import { useEffect } from "react";
+import toast from "react-hot-toast";
+import html2canvas from "html2canvas";
+import { jsPDF } from "jspdf";
+
+function Invoice() {
+  const params = useParams();
+  const { data, isLoading, error } = useOrderDetailsQuery(params?.id);
+  const order = data?.order || {};
+
+  const { shippingInfo, user, orderItems } = order;
+
+  useEffect(() => {
+    if (error) {
+      toast.error(error?.data?.message);
+    }
+  }, [error]);
+
+  const handleDownload = () => {
+    const input = document.getElementById("order_invoice");
+    html2canvas(input).then((canvas) => {
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF();
+      const imgProps = pdf.getImageProperties(imgData);
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`invoice_${order._id}.pdf`);
+    });
+  };
+
+  if (isLoading) {
+    return <Loader />;
+  }
+
+  return (
+    <div>
+      <MetaData title={"Order Invoice"} />
+      <div className="order-invoice my-5">
+        <div className="row d-flex justify-content-center mb-5">
+          <button className="btn btn-success col-md-5" onClick={handleDownload}>
+            <i className="fa fa-print"></i> Download Invoice
+          </button>
+        </div>
+        <div id="order_invoice" className="p-3 border border-secondary">
+          <header className="clearfix">
+            <div id="logo">
+              <img src="../images/invoice-logo.png" alt="Company Logo" />
+            </div>
+            <h1>INVOICE # {order._id}</h1>
+            <div id="company" className="clearfix">
+              <div>ShopIT</div>
+              <div>
+                455 Foggy Heights,
+                <br />
+                AZ 85004, US
+              </div>
+              <div>(602) 519-0450</div>
+              <div>
+                <a href="mailto:info@shopit.com">info@shopit.com</a>
+              </div>
+            </div>
+            <div id="project">
+              <div>
+                <span>Name</span> {user?.name}
+              </div>
+              <div>
+                <span>EMAIL</span> {user?.email}
+              </div>
+              <div>
+                <span>PHONE</span> {user?.phone}
+              </div>
+              <div>
+                <span>ADDRESS</span> {shippingInfo?.address},{" "}
+                {shippingInfo?.city}, {shippingInfo?.zipCode},{" "}
+                {shippingInfo?.country}
+              </div>
+              <div>
+                <span>DATE</span>{" "}
+                {new Date(order?.createdAt).toLocaleDateString("en-US")}
+              </div>
+              <div>
+                <span>Status</span> {order?.orderStatus}
+              </div>
+            </div>
+          </header>
+          <main>
+            <table className="mt-5">
+              <thead>
+                <tr>
+                  <th className="service">ID</th>
+                  <th className="desc">NAME</th>
+                  <th>PRICE</th>
+                  <th>QTY</th>
+                  <th>TOTAL</th>
+                </tr>
+              </thead>
+              <tbody>
+                {orderItems?.map((item) => (
+                  <tr>
+                    <td className="service">{item?.product}</td>
+                    <td className="desc"> {item?.name}</td>
+                    <td className="unit">${item?.price.toFixed(2)}</td>
+                    <td className="qty">{item?.quantity}</td>
+                    <td className="total">
+                      ${(item?.price * item?.quantity).toFixed(2)}
+                    </td>
+                  </tr>
+                ))}
+
+                <tr>
+                  <td colspan="4">
+                    <b>SUBTOTAL</b>
+                  </td>
+                  <td className="total">${order?.itemsPrice}</td>
+                </tr>
+
+                <tr>
+                  <td colspan="4">
+                    <b>TAX 15%</b>
+                  </td>
+                  <td className="total">${order?.taxPrice}</td>
+                </tr>
+
+                <tr>
+                  <td colspan="4">
+                    <b>SHIPPING</b>
+                  </td>
+                  <td className="total">${order?.shippingPrice}</td>
+                </tr>
+
+                <tr>
+                  <td colspan="4" className="grand total">
+                    <b>GRAND TOTAL</b>
+                  </td>
+                  <td className="grand total">${order?.totalPrice}</td>
+                </tr>
+              </tbody>
+            </table>
+            <div id="notices">
+              <div>NOTICE:</div>
+              <div className="notice">
+                A finance charge of 1.5% will be made on unpaid balances after
+                30 days.
+              </div>
+            </div>
+          </main>
+          <footer>
+            Invoice was created on a computer and is valid without the
+            signature.
+          </footer>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default Invoice;
+```
+
+- Go to frontend/src/components/invoice folder then create new file `invoice.css` & add the code :
+
+```javascript
+.clearfix:after {
+  content: "";
+  display: table;
+  clear: both;
+}
+
+.order-invoice a {
+  color: #5d6975;
+  text-decoration: underline;
+}
+
+.order-invoice header {
+  padding: 10px 0;
+  margin-bottom: 30px;
+}
+
+#logo {
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+#logo img {
+  width: 180px;
+}
+
+.order-invoice h1 {
+  border-top: 1px solid #5d6975;
+  border-bottom: 1px solid #5d6975;
+  color: #5d6975;
+  font-size: 2.4em;
+  line-height: 1.4em;
+  font-weight: normal;
+  text-align: center;
+  margin: 0 0 20px 0;
+  background: url(../images//dimension.png);
+}
+
+#project {
+  float: left;
+}
+
+#project span {
+  color: #5d6975;
+  text-align: right;
+  width: 52px;
+  margin-right: 10px;
+  display: inline-block;
+  font-size: 0.8em;
+}
+
+#company {
+  float: right;
+  text-align: right;
+}
+
+#project div,
+#company div {
+  white-space: nowrap;
+}
+
+.order-invoice table {
+  width: 100%;
+  border-collapse: collapse;
+  border-spacing: 0;
+  margin-bottom: 20px;
+}
+
+.order-invoice table tr:nth-child(2n-1) td {
+  background: #f5f5f5;
+}
+
+.order-invoice table th,
+.order-invoice table td {
+  text-align: center;
+}
+
+.order-invoice table th {
+  padding: 5px 20px;
+  color: #5d6975;
+  border-bottom: 1px solid #c1ced9;
+  white-space: nowrap;
+  font-weight: normal;
+}
+
+.order-invoice table .service,
+.order-invoice table .desc {
+  text-align: left;
+}
+
+.order-invoice table td {
+  padding: 20px;
+  text-align: right;
+}
+
+.order-invoice table td.service,
+.order-invoice table td.desc {
+  vertical-align: top;
+}
+
+.order-invoice table td.unit,
+.order-invoice table td.qty,
+.order-invoice table td.total {
+  font-size: 1.2em;
+}
+
+.order-invoice table td.grand {
+  border-top: 1px solid #5d6975;
+}
+
+#notices .notice {
+  color: #5d6975;
+  font-size: 1.2em;
+}
+
+.order-invoice footer {
+  color: #5d6975;
+  width: 100%;
+  height: 30px;
+  border-top: 1px solid #c1ced9;
+  padding: 8px 0;
+  text-align: center;
+}
+
+```
+
+- Go to frontend/src/App.js File & update the code :
+
+```javascript
+import "./App.css";
+
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+
+import Home from "./components/Home";
+import Footer from "./components/layout/Footer";
+import Header from "./components/layout/Header";
+import { Toaster } from "react-hot-toast";
+import ProductDetails from "./components/product/productDetails";
+import Login from "./components/auth/Login";
+import Register from "./components/auth/Register";
+import Profile from "./components/user/profile";
+import UpdateProfile from "./components/user/UpdateProfile";
+import ProtectedRoute from "./components/auth/ProtectedRoute";
+import UploadAvatar from "./components/user/UploadAvatar";
+import UpdatePassword from "./components/user/UpdatePassword";
+import ForgotPassword from "./components/auth/ForgotPassword";
+import ResetPassword from "./components/auth/ResetPassword";
+import Cart from "./components/cart/Cart";
+import Shipping from "./components/cart/Shipping";
+import ConfirmOrder from "./components/cart/ConfirmOrder";
+import PaymentMethod from "./components/cart/PaymentMethod";
+import MyOrders from "./components/order/MyOrders";
+import OrderDetails from "./components/order/OrderDetails";
+import Invoice from "./components/Invoice";
+
+function App() {
+  return (
+    <Router>
+      <div className="App">
+        <Toaster position="top-center" />
+        <Header />
+        <div className="container">
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/product/:id" element={<ProductDetails />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+
+            <Route path="/password/forgot" element={<ForgotPassword />} />
+            <Route path="/password/reset/:token" element={<ResetPassword />} />
+
+            <Route
+              path="/me/profile"
+              element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/me/update-profile"
+              element={
+                <ProtectedRoute>
+                  <UpdateProfile />
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
+          <Routes>
+            path="/me/update-avatar" element=
+            {
+              <ProtectedRoute>
+                <UploadAvatar />
+              </ProtectedRoute>
+            }
+          </Routes>
+          <Routes>
+            path="/me/update-password" element=
+            {
+              <ProtectedRoute>
+                <UpdatePassword />
+              </ProtectedRoute>
+            }
+          </Routes>
+          <Routes path="/cart" element={<Cart />} />
+          <Routes
+            path="/shipping"
+            element={
+              <ProtectedRoute>
+                <Shipping />
+              </ProtectedRoute>
+            }
+          />
+          <Routes
+            path="/confirm_order"
+            element={
+              <ProtectedRoute>
+                <ConfirmOrder />
+              </ProtectedRoute>
+            }
+          />
+          <Routes
+            path="/payment_method"
+            element={
+              <ProtectedRoute>
+                <PaymentMethod />
+              </ProtectedRoute>
+            }
+          />
+          <Routes
+            path="/me/orders"
+            element={
+              <ProtectedRoute>
+                <MyOrders />
+              </ProtectedRoute>
+            }
+          />
+          <Routes
+            path="/me/orders/:id"
+            element={
+              <ProtectedRoute>
+                <OrderDetails />
+              </ProtectedRoute>
+            }
+          />
+          <Routes
+            path="/invoice/orders/:id"
+            element={
+              <ProtectedRoute>
+                <Invoice />
+              </ProtectedRoute>
+            }
+          />
+        </div>
+        <Footer />
+      </div>
+    </Router>
+  );
+}
+
+export default App;
+```
