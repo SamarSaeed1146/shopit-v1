@@ -39,7 +39,7 @@ function PaymentMethod() {
       toast.error(error?.data?.message);
     }
     if (isSuccess) {
-      navigate("/");
+      navigate("/me/orders?order_success=true");
     }
   }, [error, isSuccess, navigate]);
 

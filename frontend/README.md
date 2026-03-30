@@ -8035,3 +8035,307 @@ function OrderDetails() {
 
 export default OrderDetails;
 ```
+
+### Clear Cart After Order
+
+- Go to frontend/src/components/cart/PaymentMethod.jsx file & update the code :
+
+```javascript
+import MetaData from "../layout/MetaData";
+import { useSelector } from "react-redux";
+import CheckoutSteps from "./CheckoutSteps";
+import { useEffect, useState } from "react";
+import { calculateOrderCost } from "../../helpers/helpers";
+import {
+  useCreateNewOrderMutation,
+  useStripeCheckoutSessionMutation,
+} from "../../redux/api/orderApi";
+import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
+
+function PaymentMethod() {
+  const [method, setMethod] = useState("");
+
+  const navigate = useNavigate();
+
+  const { shippingInfo, cartItems } = useSelector((state) => state.cart);
+
+  const [createNewOrder, { error, isSuccess }] = useCreateNewOrderMutation();
+
+  const [
+    stripeCheckoutSession,
+    { data: checkoutData, error: checkoutError, isLoading },
+  ] = useStripeCheckoutSessionMutation();
+
+  useEffect(() => {
+    if (checkoutData) {
+      window.location.href = checkoutData?.url;
+    }
+
+    if (checkoutError) {
+      toast.error(checkoutError?.data?.message);
+    }
+  }, [checkoutData, checkoutError, isLoading, navigate]);
+
+  useEffect(() => {
+    if (error) {
+      toast.error(error?.data?.message);
+    }
+    if (isSuccess) {
+      navigate("/me/orders?order_success=true");
+    }
+  }, [error, isSuccess, navigate]);
+
+  const submitHandler = (e) => {
+    e.preventDefault();
+
+    const { itemsPrice, shippingPrice, taxPrice, totalPrice } =
+      calculateOrderCost(cartItems);
+
+    if (method === "COD") {
+      const orderData = {
+        shippingInfo,
+        orderItems: cartItems,
+        itemsPrice,
+        shippingAmount: shippingPrice,
+        taxAmount: taxPrice,
+        totalAmount: totalPrice,
+        paymentInfo: {
+          status: "Not Paid",
+        },
+        paymentMethod: "COD",
+      };
+
+      createNewOrder(orderData);
+    }
+
+    if (method === "Card") {
+      const orderData = {
+        shippingInfo,
+        orderItems: cartItems,
+        itemsPrice,
+        shippingAmount: shippingPrice,
+        taxAmount: taxPrice,
+        totalAmount: totalPrice,
+      };
+
+      stripeCheckoutSession(orderData);
+    }
+  };
+
+  return (
+    <>
+      <MetaData title={"Payment Method"} />
+      <CheckoutSteps shipping confirmOrder payment />
+      <div className="row wrapper">
+        <div className="col-10 col-lg-5">
+          <form className="shadow rounded bg-body" onSubmit={submitHandler}>
+            <h2 className="mb-4">Select Payment Method</h2>
+
+            <div className="form-check">
+              <input
+                className="form-check-input"
+                type="radio"
+                name="payment_mode"
+                id="codradio"
+                value="COD"
+                onChange={(e) => setMethod("COD")}
+              />
+              <label className="form-check-label" htmlFor="codradio">
+                Cash on Delivery
+              </label>
+            </div>
+            <div className="form-check">
+              <input
+                className="form-check-input"
+                type="radio"
+                name="payment_mode"
+                id="cardradio"
+                value="Card"
+                onChange={(e) => setMethod("Card")}
+              />
+              <label className="form-check-label" htmlFor="cardradio">
+                Card - VISA, MasterCard
+              </label>
+            </div>
+
+            <button
+              id="shipping_btn"
+              type="submit"
+              className="btn py-2 w-100"
+              disabled={isLoading}
+            >
+              CONTINUE
+            </button>
+          </form>
+        </div>
+      </div>
+    </>
+  );
+}
+
+export default PaymentMethod;
+```
+
+- Go to frontend/src/components/order/MyOrders.jsx file & update the code :
+
+```javascript
+import { useEffect } from "react";
+import { useMyOrdersQuery } from "../../redux/api/orderApi";
+import { toast } from "react-toastify";
+import Loader from "../layout/Loader";
+import { MDBDataTable } from "mdbreact";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import MetaData from "../layout/MetaData";
+import { clearCart } from "../../redux/features/cartSlice";
+import { useDispatch } from "react-redux";
+
+function MyOrders() {
+  const { data, isLoading, error } = useMyOrdersQuery();
+
+  const [searchParams] = useSearchParams();
+
+  const dispatch = useDispatch();
+
+  const navigator = useNavigate();
+
+  const orderSuccess = searchParams.get("order_success");
+
+  useEffect(() => {
+    if (error) {
+      toast.error(error?.data?.message);
+    }
+    if (orderSuccess) {
+      dispatch(clearCart());
+      navigator("/me/orders");
+    }
+  }, [error, orderSuccess, navigator, dispatch]);
+
+  const setOrders = () => {
+    const orders = {
+      columns: [
+        {
+          label: "ID",
+          field: "id",
+          sort: "asc",
+        },
+        {
+          label: "Amount",
+          field: "amount",
+          sort: "asc",
+        },
+        {
+          label: "Payment Status",
+          field: "paymentStatus",
+          sort: "asc",
+        },
+        {
+          label: "Order Status",
+          field: "orderStatus",
+          sort: "asc",
+        },
+        {
+          label: "Actions",
+          field: "actions",
+          sort: "asc",
+        },
+      ],
+      rows: [],
+    };
+
+    data?.orders?.forEach((order) => {
+      orders.rows.push({
+        id: order?._id,
+        amount: `$${order.totalPrice}`,
+        paymentStatus: order?.paymentInfo?.status?.toUpperCase(),
+        orderStatus: order?.orderStatus,
+        actions: (
+          <>
+            <Link to={`/me/orders/${order._id}`} className="btn btn-primary">
+              <i className="fa fa-eye"></i>
+            </Link>
+            <Link
+              to={`/invoice/orders/${order._id}`}
+              className="btn btn-success ms-2"
+            >
+              <i className="fa fa-print"></i>
+            </Link>
+          </>
+        ),
+      });
+    });
+
+    return orders;
+  };
+
+  if (isLoading) return <Loader />;
+
+  return (
+    <div>
+      <MetaData title={"My Orders"} />
+      <h1 className="my-5">{data?.orders?.length} Orders</h1>
+
+      <MDBDataTable data={setOrders()} />
+    </div>
+  );
+}
+
+export default MyOrders;
+```
+
+- Go to frontend/src/redux/features/cartSlice.js file & update the code :
+
+```javascript
+import { createSlice } from "@reduxjs/toolkit";
+
+const initialState = {
+  cartItems: localStorage.getItem("cartItems")
+    ? JSON.parse(localStorage.getItem("cartItems"))
+    : [],
+
+  shippingInfo: localStorage.getItem("shippingInfo")
+    ? JSON.parse(localStorage.getItem("shippingInfo"))
+    : {},
+};
+
+export const cartSlice = createSlice({
+  initialState,
+  name: "cartSlice",
+  reducers: {
+    setCartItem: (state, action) => {
+      const item = action.payload;
+
+      const isItemExist = state.cartItems.find(
+        (i) => i.productId === item.product,
+      );
+      if (isItemExist) {
+        state.cartItems = state.cartItems.map((i) =>
+          i.product === isItemExist.product ? item : i,
+        );
+      } else {
+        state.cartItems.push(item);
+      }
+
+      localStorage.setItem("cartItems", JSON.stringify(state.cartItems));
+    },
+    removeCartItem: (state, action) => {
+      state.cartItems = state.cartItems.filter(
+        (i) => i.productId !== action.payload,
+      );
+      localStorage.setItem("cartItems", JSON.stringify(state.cartItems));
+    },
+    clearCart: (state, action) => {
+      localStorage.removeItem("cartItems");
+      state.cartItems = [];
+    },
+    saveShippingInfo: (state, action) => {
+      state.shippingInfo = action.payload;
+      localStorage.setItem("shippingInfo", JSON.stringify(state.shippingInfo));
+    },
+  },
+});
+
+export default cartSlice.reducer;
+export const { setCartItem, removeCartItem, saveShippingInfo, clearCart } =
+  cartSlice.actions;
+```
