@@ -20,7 +20,18 @@ export const productsApi = createApi({
     getProductDetails: builder.query({
       query: (id) => `/products/${id}`,
     }),
+    submitReview: builder.mutation({
+      query: (reviewData) => ({
+        url: "/reviews",
+        method: "POST",
+        body: reviewData,
+      }),
+    }),
   }),
 });
 
-export const { useGetProductsQuery, useGetProductDetailsQuery } = productsApi;
+export const {
+  useGetProductsQuery,
+  useGetProductDetailsQuery,
+  useSubmitReviewMutation,
+} = productsApi;

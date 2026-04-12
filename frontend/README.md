@@ -8775,3 +8775,348 @@ function App() {
 
 export default App;
 ```
+
+### Submit Review
+
+- Go to frontend/src/components folder then create a new folder reviews folder then create new file `NewReview.jsx` file then add the code :
+
+```javascript
+import StarRatings from "react-star-ratings";
+import { useEffect, useState } from "react";
+import { useSubmitReviewMutation } from "../../redux/api/productsApi";
+import toast from "react-hot-toast";
+
+function NewReview({ productId }) {
+  const [rating, setRating] = useState(0);
+  const [comment, setComment] = useState("");
+
+  const [submitReview, { error, isSuccess }] = useSubmitReviewMutation();
+
+  useEffect(() => {
+    if (error) {
+      toast.error(error?.data?.message);
+    }
+    if (isSuccess) {
+      toast.success("Review submitted successfully");
+    }
+  }, [error, isSuccess]);
+
+  const submitHandler = () => {
+    const reviewData = {
+      rating,
+      comment,
+      productId,
+    };
+    submitReview(reviewData);
+  };
+
+  return (
+    <div>
+      <button
+        id="review_btn"
+        type="button"
+        className="btn btn-primary mt-4"
+        data-bs-toggle="modal"
+        data-bs-target="#ratingModal"
+      >
+        Submit Your Review
+      </button>
+
+      <div className="row mt-2 mb-5">
+        <div className="rating w-50">
+          <div
+            className="modal fade"
+            id="ratingModal"
+            tabindex="-1"
+            role="dialog"
+            aria-labelledby="ratingModalLabel"
+            aria-hidden="true"
+          >
+            <div className="modal-dialog" role="document">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title" id="ratingModalLabel">
+                    Submit Review
+                  </h5>
+                  <button
+                    type="button"
+                    className="btn-close"
+                    data-bs-dismiss="modal"
+                    aria-label="Close"
+                  ></button>
+                </div>
+                <div className="modal-body">
+                  <StarRatings
+                    rating={rating}
+                    starRatedColor="rgb(20, 20, 20)"
+                    numberOfStars={5}
+                    name="rating"
+                    changeRating={(e) => setRating(e)}
+                  />
+
+                  <textarea
+                    name="review"
+                    id="review"
+                    className="form-control mt-4"
+                    placeholder="Enter your comment"
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                  ></textarea>
+
+                  <button
+                    id="new_review_btn"
+                    className="btn w-100 my-4 px-4"
+                    data-bs-dismiss="modal"
+                    aria-label="Close"
+                    onClick={submitHandler}
+                  >
+                    Submit
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default NewReview;
+```
+
+- Go to frontend/src/components/product/ProductDetails.jsx file then add the code :
+
+```javascript
+import { useEffect, useState } from "react";
+import { useGetProductDetailsQuery } from "../../redux/api/productsApi";
+import { useParams } from "react-router-dom";
+import toast from "react-hot-toast";
+import StarRatings from "react-star-ratings";
+import Loader from "../layout/Loader";
+import { useDispatch, useSelector } from "react-redux";
+import { setCartItem } from "../../redux/features/cartSlice";
+import MetaData from "../layout/MetaData";
+import NewReview from "../reviews/NewReview";
+
+function ProductDetails() {
+  const params = useParams();
+  const dispatch = useDispatch();
+
+  const [quantity, setQuantity] = useState(1);
+  const [activeImg, setActiveImg] = useState("");
+
+  const { data, isLoading, error, isError } = useGetProductDetailsQuery(
+    params.id,
+  );
+  const product = data?.product;
+  const { isAuthenticated } = useSelector((state) => state.auth);
+
+  useEffect(() => {
+    if (product) {
+      setActiveImg(
+        product?.images[0]
+          ? product?.images[0]?.url
+          : "/images/default_product.png",
+      );
+    }
+  }, [product]);
+
+  useEffect(() => {
+    if (isError) {
+      toast.error(error?.data?.message);
+    }
+  }, [isError, error]);
+
+  const increseQty = () => {
+    const count = document.querySelector(".count");
+    if (count.valueAsNumber >= product?.stock) return;
+    const qty = count.valueAsNumber + 1;
+    setQuantity(qty);
+  };
+
+  const decreseQty = () => {
+    const count = document.querySelector(".count");
+    if (count.valueAsNumber <= 1) return;
+    const qty = count.valueAsNumber - 1;
+    setQuantity(qty);
+  };
+
+  const setItemToCart = () => {
+    const cartItem = {
+      productId: product?._id,
+      name: product?.name,
+      price: product?.price,
+      image: product?.images[0]?.url,
+      stock: product?.stock,
+      quantity,
+    };
+
+    dispatch(setCartItem(cartItem));
+    toast.success("Item added to cart");
+  };
+
+  if (isLoading) return <Loader />;
+  return (
+    <>
+      <MetaData title={product?.name} />
+      <div className="row d-flex justify-content-around">
+        <div className="col-12 col-lg-5 img-fluid" id="product_image">
+          <div className="p-3">
+            <img
+              className="d-block w-100"
+              src={activeImg}
+              alt={product?.name}
+              width="340"
+              height="390"
+            />
+          </div>
+          <div className="row justify-content-start mt-5">
+            {product?.images?.map((img) => (
+              <div className="col-2 ms-4 mt-2">
+                <button
+                  type="button"
+                  className="p-0 border-0 bg-transparent"
+                  aria-label="View product image"
+                >
+                  <img
+                    className={`d-block border rounded p-3 cursor-pointer ${
+                      img?.url === activeImg ? "border-primary" : ""
+                    }`}
+                    height="100"
+                    width="100"
+                    src={img?.url}
+                    alt={img?.url}
+                    onClick={(e) => setActiveImg(img?.url)}
+                  />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="col-12 col-lg-5 mt-5">
+          <h3>{product?.name}</h3>
+          <p id="product_id">Product # {product?._id}</p>
+
+          <hr />
+
+          <div className="d-flex">
+            <StarRatings
+              rating={product?.ratings}
+              starRatedColor="rgb(20, 20, 20)"
+              numberOfStars={5}
+              name="rating"
+              starDimension="20px"
+              starSpacing="3px"
+            />
+            <span id="no-of-reviews" className="pt-1 ps-2">
+              {" "}
+              ({product?.numOfReviews} Reviews){" "}
+            </span>
+          </div>
+          <hr />
+
+          <p id="product_price">${product?.price}</p>
+          <div className="stockCounter d-inline">
+            <span className="btn btn-danger minus" onClick={decreseQty}>
+              -
+            </span>
+            <input
+              type="number"
+              className="form-control count d-inline"
+              value={quantity}
+              readonly
+            />
+            <span className="btn btn-primary plus" onClick={increseQty}>
+              +
+            </span>
+          </div>
+          <button
+            type="button"
+            id="cart_btn"
+            className="btn btn-primary d-inline ms-4"
+            disabled={product?.stock <= 0}
+            onClick={setItemToCart}
+          >
+            Add to Cart
+          </button>
+
+          <hr />
+
+          <p>
+            Status:{" "}
+            <span
+              id="stock_status"
+              className={product?.stock > 0 ? "text-success" : "text-danger"}
+            >
+              {product?.stock > 0 ? "In Stock" : "Out of Stock"}
+            </span>
+          </p>
+
+          <hr />
+
+          <h4 className="mt-2">Description:</h4>
+          <p>{product?.description}</p>
+          <hr />
+          <p id="product_seller mb-3">
+            Sold by: <strong>{product?.seller}</strong>
+          </p>
+
+          {isAuthenticated ? (
+            <NewReview productId={product?._id} />
+          ) : (
+            <div className="alert alert-danger my-5" type="alert">
+              Login to post your review.
+            </div>
+          )}
+        </div>
+      </div>
+    </>
+  );
+}
+
+export default ProductDetails;
+```
+
+- Go to frontend/src/redux/api/productsApi.js file & Add the code :
+
+```javascript
+import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+
+export const productsApi = createApi({
+  reducerPath: "productsApi",
+  baseQuery: fetchBaseQuery({ baseUrl: "/api/v1" }),
+  endpoints: (builder) => ({
+    getProducts: builder.query({
+      query: (params) => ({
+        url: "/products",
+        params: {
+          page: params?.page,
+          keyword: params?.keyword,
+          category: params?.category,
+          "price[gte]": params?.min,
+          "price[lte]": params?.max,
+          "ratings[gte]": params?.ratings,
+        },
+      }),
+    }),
+    getProductDetails: builder.query({
+      query: (id) => `/products/${id}`,
+    }),
+    submitReview: builder.mutation({
+      query: (reviewData) => ({
+        url: "/reviews",
+        method: "POST",
+        body: reviewData,
+      }),
+    }),
+  }),
+});
+
+export const {
+  useGetProductsQuery,
+  useGetProductDetailsQuery,
+  useSubmitReviewMutation,
+} = productsApi;
+```
